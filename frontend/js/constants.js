@@ -1,0 +1,9 @@
+export const PLAYER_LEFT_OFFSET = 40;
+export const PLAYER_RIGHT_OFFSET = 40;
+export const PLAYER_WIDTH = 10;
+export const PLAYER_HEIGHT = 100;
+export const BALL_SIZE = 10;
+export const BALL_SPEED = 3;
+export const KEY_UP = 38;
+export const KEY_DOWN = 40;
+export const KEY_SPACE = 32;
