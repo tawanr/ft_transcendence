@@ -9,8 +9,6 @@ var player2Down = false;
 var gameStarted = false;
 var playerReady = false;
 
-console.log("game area init");
-
 class GameEntity {
     constructor(x, y, width, height, color) {
         this.x = x;
