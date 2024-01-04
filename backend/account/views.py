@@ -8,10 +8,3 @@ from django.middleware.csrf import get_token
 @require_POST
 def register_view(request):
     return JsonResponse({"success": True})
-
-
-@ensure_csrf_cookie
-def get_csrf(request):
-    response = JsonResponse({"details": "CSRF cookie set"})
-    response["X-CSRFToken"] = get_token(request)
-    return response
