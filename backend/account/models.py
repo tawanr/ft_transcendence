@@ -19,3 +19,11 @@ class UserToken(models.Model):
         token = jwt.encode(claims, settings.JWT_KEY, algorithm="HS256")
         self.access_token = token
         self.save()
+
+    def is_token_valid(self):
+        claims = jwt.decode(self.access_token, settings.JWT_KEY, algorithms=["HS256"])
+        if claims["exp"] < int(time.time()):
+            return False
+        if claims["sub"] != self.user.id:
+            return False
+        return True

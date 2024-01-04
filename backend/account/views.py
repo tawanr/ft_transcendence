@@ -3,13 +3,13 @@ import json
 import time
 from uuid import uuid4
 import jwt
-from django.core import serializers
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
 
 from account.forms import RegisterForm
 from account.models import UserToken
+from backend.decorators import login_required_401
 
 
 @require_POST
@@ -60,3 +60,11 @@ def login_view(request):
     response = JsonResponse(rtn)
     response.set_cookie("refresh_token", refresh_token, httponly=True, secure=True)
     return response
+
+
+@require_POST
+@login_required_401
+def logout_view(request):
+    if hasattr(request.user, "usertoken"):
+        request.user.usertoken.delete()
+    return JsonResponse({"success": True})
