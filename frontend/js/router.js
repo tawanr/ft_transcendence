@@ -3,7 +3,7 @@
  * @description Handles routing for frontend to enable SPA.
  * Also handles updating the title and description of the page.
  */
-import { updateNavLinks } from "./nav.js";
+import { updateNavLinks } from "./utils.js";
 
 const TEMPLATE_DIR = "/frontend/templates/";
 const JS_DIR = "/frontend/js/";
