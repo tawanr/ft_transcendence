@@ -116,37 +116,74 @@ var ball = new PongBall(
     Math.random() * 60 + 120 + Math.round(Math.random()) * 180
 );
 
-const roomName = "test";
-const gameSocket = new WebSocket(
-    "ws://" + "localhost:8000" + "/ws/gameplay/" + roomName + "/"
-);
+var gameSocket;
 
 var playerId = "";
-gameSocket.onmessage = function (e) {
-    const data = JSON.parse(e.data);
-    if (data.type === "playerId") {
-        console.log("Player ID: " + data.playerId);
-        playerId = data.playerId;
-    }
 
-    if (data.type === "gameState") {
-        player1.x = data.player1.x;
-        player1.y = data.player1.y;
-        player1.score = data.player1.score;
-        player2.x = data.player2.x;
-        player2.y = data.player2.y;
-        player2.score = data.player2.score;
-        ball.x = data.ball.x;
-        ball.y = data.ball.y;
-        updateScoreBoard();
+function gameInit() {
+    gameSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        if (data.type === "roomDetails") {
+            playerId = data.playerId;
+            document.getElementById("gameRoomTitle").innerText = data.roomCode;
+            document.getElementById("userRoomNav").classList.add("d-none");
+        }
+
+        if (data.type === "playerId") {
+            playerId = data.playerId;
+        }
+
+        if (data.type === constants.SOCKET_GAMESTATE) {
+            player1.x = data.player1.x;
+            player1.y = data.player1.y;
+            player1.score = data.player1.score;
+            player2.x = data.player2.x;
+            player2.y = data.player2.y;
+            player2.score = data.player2.score;
+            ball.x = data.ball.x;
+            ball.y = data.ball.y;
+            updateScoreBoard();
+        }
+    };
+}
+
+function registerClient(playerName) {
+    gameSocket.onopen = function (e) {
+        gameSocket.send(
+            JSON.stringify({
+                type: constants.SOCKET_REGISTER,
+                playerName: playerName,
+            })
+        );
     }
-};
+}
+
+function joinRoom() {
+    const playerName = document.getElementById("playerName").value;
+    const roomCode = document.getElementById("roomCode").value;
+    gameSocket = new WebSocket(
+        "ws://" + constants.BACKEND_HOST + constants.BACKEND_SOCKET_API + roomCode + "/"
+    );
+    registerClient(playerName);
+    gameInit();
+}
+document.getElementById("joinRoomBtn").addEventListener("click", joinRoom);
+
+function createRoom() {
+    const playerName = document.getElementById("playerName").value;
+    gameSocket = new WebSocket(
+        "ws://" + constants.BACKEND_HOST + constants.BACKEND_SOCKET_API
+    );
+    registerClient(playerName);
+    gameInit();
+}
+document.getElementById("createRoomBtn").addEventListener("click", createRoom);
 
 function playerSendReady() {
     playerReady = true;
     gameSocket.send(
         JSON.stringify({
-            type: "player.ready",
+            type: constants.SOCKET_READY,
             id: playerId,
         })
     );
@@ -184,7 +221,7 @@ function keyDownHandler(e) {
 
     gameSocket.send(
         JSON.stringify({
-            type: "player.controls",
+            type: constants.SOCKET_PLAYER_CONTROLS,
             up: player1Up,
             down: player1Down,
             id: playerId,
@@ -214,7 +251,7 @@ function keyUpHandler(e) {
 
     gameSocket.send(
         JSON.stringify({
-            type: "player.controls",
+            type: constants.SOCKET_PLAYER_CONTROLS,
             up: player1Up,
             down: player1Down,
             id: playerId,

@@ -5,8 +5,8 @@
  */
 import { updateNavLinks } from "./utils.js";
 
-const TEMPLATE_DIR = "/frontend/templates/";
-const JS_DIR = "/frontend/js/";
+const TEMPLATE_DIR = "/templates/";
+const JS_DIR = "/js/";
 const TITLE = "ft_transcendence";
 
 document.addEventListener("click", (e) => {

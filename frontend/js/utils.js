@@ -1,11 +1,13 @@
 export function updateUserNav() {
-    // Update the navbar with the current user if logged in
-    // and there is a username in localStorage. Otherwise,
-    // show the login and signup links.
+    /**
+     * Update the navbar with the current user if logged in
+     * and there is a username in localStorage. Otherwise,
+     * show the login and signup links.
+     */
     const username = localStorage.getItem("username");
     const navAuth = document.getElementById("navAuth");
     const navLoggedIn = document.getElementById("navLoggedIn");
-    if (username == "") {
+    if (!username) {
         navAuth.classList.remove("d-none");
         navLoggedIn.classList.add("d-none");
     } else {
