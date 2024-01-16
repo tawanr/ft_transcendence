@@ -120,3 +120,7 @@ class GameRoom(models.Model):
                 "player_id": self.player2_session_id,
             },
         ]
+
+    async def set_inactive(self):
+        self.is_active = False
+        await self.asave()

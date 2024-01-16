@@ -2,14 +2,22 @@ import binascii
 import json
 import time
 from uuid import uuid4
+
 import jwt
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET, require_POST
 
 from account.forms import RegisterForm
 from account.models import UserToken
 from backend.decorators import login_required_401
+
+
+@require_GET
+@login_required_401
+def user_view(request):
+    user = User.objects.get(id=request.user.id)
+    return JsonResponse({"username": user.username, "email": user.email})
 
 
 @require_POST

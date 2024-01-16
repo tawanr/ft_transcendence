@@ -73,6 +73,9 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                 "player_id": self.player_id,
             },
         )
+
+        if self.host:
+            await self.game_room.set_inactive()
         await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
 
     async def set_players(self):
