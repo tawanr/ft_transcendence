@@ -20,7 +20,7 @@ shell:
 	cd backend && python manage.py shell
 
 run-nginx:
-	sudo nginx -c $(PWD)/nginx/nginx.conf
+	sudo nginx -c $(PWD)/nginx/default.conf
 	sudo nginx -s reload
 
 stop-nginx:
