@@ -1,18 +1,22 @@
-import json
 import asyncio
-import gameplay.constants as constants
-from typing import Dict
-
+import json
+from typing import List
 from uuid import uuid4
+
+from account.models import UserToken
 from channels.generic.websocket import AsyncWebsocketConsumer
-from gameplay.states import PlayerState, BallState, GameState
+from django.http import JsonResponse
+
+import gameplay.constants as constants
+from gameplay.models import GameRoom
+from gameplay.states import BallState, GameState, PlayerState
 
 
 class GameplayConsumer(AsyncWebsocketConsumer):
     game_group_name: str = "game_group"
-    players: Dict[str, PlayerState] = {}
+    players: List[PlayerState] = []
     host: bool = False
-    game_state: GameState = GameState()
+    game: GameState = GameState()
     ball_state: BallState = BallState(
         x=(constants.GAME_WIDTH / 2) - (constants.BALL_SIZE / 2),
         y=(constants.GAME_HEIGHT / 2) - (constants.BALL_SIZE / 2),
@@ -20,39 +24,48 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         height=constants.BALL_SIZE,
     )
     player_id: str = ""
+    registered = False
 
     update_lock = asyncio.Lock()
 
     async def connect(self):
-        self.player_id = str(uuid4())
-        self.game_name = self.scope["url_route"]["kwargs"]["room_name"]
-        self.game_group_name = f"game_{self.game_name}"
+        game_code = self.scope["url_route"]["kwargs"].get("room_name")
         await self.accept()
 
-        await self.channel_layer.group_add(
-            self.game_group_name,
-            self.channel_name,
-        )
+        if game_code:
+            game_room = await GameRoom.objects.filter(
+                game_code=game_code, is_active=True
+            ).afirst()
 
-        await self.channel_layer.group_send(
-            self.game_group_name,
-            {
-                "type": "player.join",
-                "player_id": self.player_id,
-            },
-        )
+        if not game_code or not game_room:
+            game_room = await GameRoom.objects.acreate()
 
-        await self.send(
-            text_data=json.dumps(
-                {
-                    "type": "playerId",
-                    "playerId": self.player_id,
-                    "roomId": self.game_name,
-                }
-            )
-        )
+        await self.game.init_players()
+
+        self.game_room = game_room
+        self.game_code = game_room.game_code
+        self.game_group_name = f"game_{self.game_code}"
+
+        asyncio.create_task(self.check_registered())
+
+    async def check_registered(self):
+        await asyncio.sleep(2)
+        async with self.update_lock:
+            if not self.registered:
+                await self.send(
+                    text_data=json.dumps(
+                        {
+                            "type": "disconnect",
+                            "details": "No player registered. Closing connection.",
+                        }
+                    )
+                )
+                await self.close()
+                return
+        print(f"\n{self.player_id} connected\n")
 
     async def disconnect(self, close_code):
+        self.game.started = False
         await self.channel_layer.group_send(
             self.game_group_name,
             {
@@ -62,77 +75,110 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         )
         await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
 
+    async def set_players(self):
+        players = await self.game_room.get_players()
+        self.game.players[0].player_id = players[0]["player_id"]
+        self.game.players[0].player_name = players[0]["name"]
+        self.game.players[1].player_id = players[1]["player_id"]
+        self.game.players[1].player_name = players[1]["name"]
+        if self.game.players[0].player_id == self.player_id:
+            self.host = True
+
     async def receive(self, text_data):
         data = json.loads(text_data)
 
+        if data["type"] == "client.register":
+            if authorization := data.get("authorization"):
+                token = (
+                    await UserToken.objects.filter(access_token=authorization)
+                    .select_related("user")
+                    .afirst()
+                )
+                if not token or not token.is_token_valid():
+                    return JsonResponse({"details": "Unauthorized"}, status=401)
+                self.player_id = await self.game_room.add_player(token.user)
+            elif name := data.get("playerName"):
+                self.player_id = await self.game_room.add_player_name(name)
+            else:
+                await self.send(
+                    text_data={
+                        "type": "disconnect",
+                        "details": "Invalid registration. Closing connection.",
+                    }
+                )
+                await self.close()
+                return
+            self.registered = True
+            await self.set_players()
+
+            await self.channel_layer.group_add(
+                self.game_group_name,
+                self.channel_name,
+            )
+
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "roomDetails",
+                        "roomCode": self.game_code,
+                        "playerId": str(self.player_id),
+                    }
+                )
+            )
+
+            await self.update_group()
+
+        # if not self.player_id:
+        #     return
+
+        message = {
+            **data,
+            "player_id": self.player_id,
+        }
+        print(f"\n{message}")
         await self.channel_layer.group_send(
             self.game_group_name,
-            data,
+            message,
         )
 
+    async def client_register(self, event):
+        pass
+
     async def player_leave(self, event):
-        self.players.pop(event["player_id"])
         if not self.host:
             return
-        for player in self.players.values():
+        for player in self.game.players:
             player.ready = False
-        self.game_state.started = False
         print(f"\nPlayer Disconnected: {event['player_id']}\n")
         await self.update_group()
 
-    async def player_join(self, event):
-        if event["player_id"] in self.players:
-            return
-        player_id = event["player_id"]
-        new_player = PlayerState(
-            player_id=player_id,
-            x=constants.PLAYER_LEFT_OFFSET,
-            y=(self.game_state.height / 2) - (constants.PLAYER_HEIGHT / 2),
-            speed=constants.PLAYER_SPEED,
-            width=constants.PLAYER_WIDTH,
-            height=constants.PLAYER_HEIGHT,
-        )
-        if len(self.players) > 0:
-            new_player.player1 = False
-            new_player.x = (
-                constants.GAME_WIDTH - constants.PLAYER_RIGHT_OFFSET - new_player.width
-            )
-        self.players[player_id] = new_player
-        print(f"\nPlayer Joined: {player_id}\n")
-        if len(self.players) == 2:
-            self.host = True
-            print(f"\n{self.player_id} is the host.\n")
-        self.send_group()
-
     async def player_ready(self, event):
-        if not self.host or self.game_state.started:
+        print(f"\n{self.player_id} is host: {self.host}\n")
+        if not self.host or self.game.started:
             return
-        player = self.players.get(event["id"])
-        player.ready = True
-        self.players[event["id"]] = player
+        player = await self.game.get_player(event["id"])
+        await player.set_ready()
         await self.update_group()
-        for player in self.players.values():
+        for player in self.game.players:
             if not player.ready:
                 return
-        self.game_state.started = True
+        self.game.started = True
         asyncio.create_task(self.game_loop())
 
     async def player_controls(self, event):
         if not self.host:
             return
-        player = self.players.get(event["id"])
+        player = await self.game.get_player(event["id"])
         if not player:
             return
-        player.up_key = event["up"]
-        player.down_key = event["down"]
-        self.players[event["id"]] = player
+        await player.set_controls(event["up"], event["down"])
         await self.update_group()
 
     async def state_update(self, event):
         if "players" in event:
-            self.players = event["players"]
+            self.game.players = event["players"]
         if "game" in event:
-            self.game_state = event["game"]
+            self.game = event["game"]
         if "ball" in event:
             self.ball_state = event["ball"]
 
@@ -140,7 +186,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         data = {
             "type": "gameState",
         }
-        for player in self.players.values():
+        for player in self.game.players:
             selector = "player1"
             score = self.ball_state.score_1
             if not player.player1:
@@ -172,8 +218,8 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             self.game_group_name,
             {
                 "type": "state.update",
-                "players": self.players,
-                "game": self.game_state,
+                "players": self.game.players,
+                "game": self.game,
                 "ball": self.ball_state,
             },
         )
@@ -183,11 +229,11 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             return
         print("\nGame started.\n")
         await self.ball_state.reset_pos()
-        while len(self.players) == 2 and self.game_state.started:
+        while self.game.started:
             async with self.update_lock:
-                for player in self.players.values():
+                for player in self.game.players:
                     await player.update()
-                await self.ball_state.update(self.players.values())
+                await self.ball_state.update(self.game.players)
             await self.update_group()
             await self.send_group()
             await asyncio.sleep(0.03)

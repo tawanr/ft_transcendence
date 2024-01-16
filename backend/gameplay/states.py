@@ -1,7 +1,10 @@
 import math
-from attr import dataclass
 from random import randrange
 from typing import List
+from uuid import uuid4
+
+from attr import dataclass
+
 import gameplay.constants as constants
 
 
@@ -19,6 +22,7 @@ class PlayerState(EntityState):
     player_id: str = ""
     player1: bool = True
     player_name: str = "Player"
+    registered_user = None
     score: int = 0
     ready: bool = False
     up_key: bool = False
@@ -33,6 +37,14 @@ class PlayerState(EntityState):
             self.y = constants.GAME_HEIGHT - self.height
         elif self.y < 0:
             self.y = 0
+
+    async def set_ready(self):
+        self.ready = True
+
+    async def set_controls(self, up: bool = False, down: bool = False):
+        self.up_key = up
+        self.down_key = down
+        print(f"\n{self.player_id} - {self.up_key} - {self.down_key}\n")
 
 
 @dataclass
@@ -104,3 +116,34 @@ class GameState:
     width: int = constants.GAME_WIDTH
     height: int = constants.GAME_HEIGHT
     started: bool = False
+    players: List[PlayerState] = []
+
+    async def init_players(self):
+        self.players = [
+            PlayerState(
+                player_id=uuid4(),
+                x=constants.PLAYER_LEFT_OFFSET,
+                y=(self.height / 2) - (constants.PLAYER_HEIGHT / 2),
+                speed=constants.PLAYER_SPEED,
+                width=constants.PLAYER_WIDTH,
+                height=constants.PLAYER_HEIGHT,
+                player1=True,
+            ),
+            PlayerState(
+                player_id=uuid4(),
+                x=constants.GAME_WIDTH
+                - constants.PLAYER_RIGHT_OFFSET
+                - constants.PLAYER_WIDTH,
+                y=(self.height / 2) - (constants.PLAYER_HEIGHT / 2),
+                speed=constants.PLAYER_SPEED,
+                width=constants.PLAYER_WIDTH,
+                height=constants.PLAYER_HEIGHT,
+                player1=False,
+            ),
+        ]
+
+    async def get_player(self, player_id: str):
+        for player in self.players:
+            if str(player.player_id) == player_id:
+                return player
+        return None
