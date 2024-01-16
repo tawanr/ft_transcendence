@@ -300,4 +300,5 @@ function updateScoreBoard() {
     player1Score.innerHTML = player1.name + " : " + player1.score;
     player2Score.innerHTML = player2.name + " : " + player2.score;
 }
+
 draw();

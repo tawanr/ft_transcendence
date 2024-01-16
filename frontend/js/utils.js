@@ -2,16 +2,19 @@ import * as constants from "./constants.js";
 
 
 export async function initUser() {
+    /** 
+     * Initialize the state of the user.
+     * Check localStorage whether there's a saved token
+     * Then fetch the user data from the backend
+     */
     const token = localStorage.getItem("token");
-    const username = await fetchUserData(token).then((data) => {
-        username = data;
-        updateUserNav();
-    });
+    const username = await fetchUserData(token);
     if (username) {
         localStorage["username"] = username;
     } else {
         localStorage.removeItem("username");
     }
+    updateUserNav();
 }
 
 export function updateUserNav() {
@@ -27,14 +30,18 @@ export function updateUserNav() {
     if (!token || !username) {
         navAuth.classList.remove("d-none");
         navLoggedIn.classList.add("d-none");
+        console.log(navLoggedIn.classList);
     } else {
         navAuth.classList.add("d-none");
-        navLoggedIn.querySelector("a").innerText = username;
+        navLoggedIn.querySelector("button").innerText = username;
         navLoggedIn.classList.remove("d-none");
     }
 }
 
 export async function fetchUserData(token) {
+    /**
+     * Fetch user data from the backend
+     */
     if (!token) {
         localStorage.removeItem("token");
         return null;
@@ -54,6 +61,9 @@ export async function fetchUserData(token) {
             return response.json();
         })
         .then((data) => {
+            if (!data) {
+                return null;
+            }
             return data.username;
         });
 }
