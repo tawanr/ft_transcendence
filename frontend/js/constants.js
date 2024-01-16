@@ -1,5 +1,5 @@
 // SERVER CONFIGS
-export const BACKEND_HOST = "localhost:8000";
+export const BACKEND_HOST = "http://localhost:8000";
 export const BACKEND_SOCKET_API = "/ws/gameplay/";
 
 // GAME DEFAULT VALUES
