@@ -8,7 +8,9 @@ export async function initUser() {
      * Then fetch the user data from the backend
      */
     const token = localStorage.getItem("token");
-    const username = await fetchUserData(token);
+    const username = await fetchUserData(token).catch((error) => {
+        return fetchUserData(localStorage.getItem("token"));
+    });
     if (username) {
         localStorage["username"] = username;
     } else {
@@ -33,28 +35,31 @@ export function updateUserNav() {
         console.log(navLoggedIn.classList);
     } else {
         navAuth.classList.add("d-none");
-        navLoggedIn.querySelector("button").innerText = username;
+        document.getElementById("navUserDropdown").innerText = username;
         navLoggedIn.classList.remove("d-none");
     }
 }
 
 export async function fetchUserData(token) {
     /**
-     * Fetch user data from the backend
+     * Fetch user data from the backend.
+     * Returns username or null.
      */
     if (!token) {
         localStorage.removeItem("token");
         return null;
     }
     const api_url = constants.BACKEND_HOST + "/account/user/";
-    return await fetch(api_url, {
+    return fetch(api_url, {
         headers: {
             Authorization: "Bearer " + token,
         },
     })
-        .then((response) => {
-            // TODO: Refresh token
+        .then(async (response) => {
             if (response.status === 401) {
+                await refreshUserToken();
+                throw new Error("Token expired");
+            } else if (response.status !== 200) {
                 localStorage.removeItem("token");
                 return null;
             }
@@ -66,6 +71,25 @@ export async function fetchUserData(token) {
             }
             return data.username;
         });
+}
+
+export async function refreshUserToken() {
+    /**
+     * Refresh the user token, it should send a request to the endpoint
+     * with cookies retrieved previously.
+     */
+    const api_url = constants.BACKEND_HOST + "/account/refresh/";
+    await fetch(api_url, {
+        method: "POST",
+        credentials: "include",
+    }).then((response) => response.json()).then((data) => {
+        if (!data.access_token) {
+            localStorage.removeItem("token");
+            return false;
+        }
+        localStorage["token"] = data.access_token;
+        return true;
+    })
 }
 
 export function updateNavLinks(route) {
