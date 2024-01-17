@@ -6,6 +6,7 @@ from uuid import uuid4
 from attr import dataclass
 
 import gameplay.constants as constants
+from gameplay.models import GameRoom
 
 
 @dataclass
@@ -110,6 +111,13 @@ class BallState(EntityState):
         self.direction = randrange(120, 210)
         self.speed = constants.BALL_SPEED
 
+    async def check_end(self):
+        if self.score_1 >= constants.WIN_SCORE or self.score_2 >= constants.WIN_SCORE:
+            await self.reset_pos()
+            self.speed = 0
+            return 0 if self.score_1 > self.score_2 else 1
+        return -1
+
 
 @dataclass
 class GameState:
@@ -117,8 +125,10 @@ class GameState:
     height: int = constants.GAME_HEIGHT
     started: bool = False
     players: List[PlayerState] = []
+    ball: BallState = None
+    room: GameRoom = None
 
-    async def init_players(self):
+    async def reset_states(self):
         self.players = [
             PlayerState(
                 player_id=uuid4(),
@@ -141,9 +151,29 @@ class GameState:
                 player1=False,
             ),
         ]
+        self.ball = BallState(
+            x=(constants.GAME_WIDTH / 2) - (constants.BALL_SIZE / 2),
+            y=(constants.GAME_HEIGHT / 2) - (constants.BALL_SIZE / 2),
+            width=constants.BALL_SIZE,
+            height=constants.BALL_SIZE,
+        )
 
     async def get_player(self, player_id: str):
         for player in self.players:
             if str(player.player_id) == player_id:
                 return player
+        return None
+
+    async def start(self):
+        self.started = True
+        self.room.is_started = True
+
+    async def update(self):
+        if not self.room.is_started and not self.room.is_active:
+            return None
+        if (victor := await self.ball.check_end()) >= 0:
+            self.started = False
+            winner_id = self.players[victor].player_id
+            await self.room.victory(winner_id)
+            return winner_id
         return None

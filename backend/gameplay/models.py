@@ -4,8 +4,6 @@ import uuid
 
 from django.db import models
 
-from gameplay.states import PlayerState
-
 
 class TournamentPlayer(models.Model):
     player = models.ForeignKey("auth.User", on_delete=models.CASCADE)
@@ -123,4 +121,18 @@ class GameRoom(models.Model):
 
     async def set_inactive(self):
         self.is_active = False
+        await self.asave()
+
+    async def force_end(self, player_id):
+        self.is_active = False
+        self.is_finished = True
+        if self.player2_session_id == player_id:
+            self.player1_won = True
+        await self.asave()
+
+    async def victory(self, player_id):
+        self.is_active = False
+        self.is_finished = True
+        if self.player1_session_id == player_id:
+            self.player1_won = True
         await self.asave()

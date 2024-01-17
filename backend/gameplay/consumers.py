@@ -14,15 +14,8 @@ from gameplay.states import BallState, GameState, PlayerState
 
 class GameplayConsumer(AsyncWebsocketConsumer):
     game_group_name: str = "game_group"
-    players: List[PlayerState] = []
     host: bool = False
     game: GameState = GameState()
-    ball_state: BallState = BallState(
-        x=(constants.GAME_WIDTH / 2) - (constants.BALL_SIZE / 2),
-        y=(constants.GAME_HEIGHT / 2) - (constants.BALL_SIZE / 2),
-        width=constants.BALL_SIZE,
-        height=constants.BALL_SIZE,
-    )
     player_id: str = ""
     registered = False
 
@@ -40,9 +33,9 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         if not game_code or not game_room:
             game_room = await GameRoom.objects.acreate()
 
-        await self.game.init_players()
+        await self.game.reset_states()
 
-        self.game_room = game_room
+        self.game.room = game_room
         self.game_code = game_room.game_code
         self.game_group_name = f"game_{self.game_code}"
 
@@ -75,11 +68,11 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         )
 
         if self.host:
-            await self.game_room.set_inactive()
+            await self.game.room.set_inactive()
         await self.channel_layer.group_discard(self.game_group_name, self.channel_name)
 
     async def set_players(self):
-        players = await self.game_room.get_players()
+        players = await self.game.room.get_players()
         self.game.players[0].player_id = players[0]["player_id"]
         self.game.players[0].player_name = players[0]["name"]
         self.game.players[1].player_id = players[1]["player_id"]
@@ -99,9 +92,9 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                 )
                 if not token or not token.is_token_valid():
                     return JsonResponse({"details": "Unauthorized"}, status=401)
-                self.player_id = await self.game_room.add_player(token.user)
+                self.player_id = await self.game.room.add_player(token.user)
             elif name := data.get("playerName"):
-                self.player_id = await self.game_room.add_player_name(name)
+                self.player_id = await self.game.room.add_player_name(name)
             else:
                 await self.send(
                     text_data={
@@ -150,14 +143,13 @@ class GameplayConsumer(AsyncWebsocketConsumer):
     async def player_leave(self, event):
         if not self.host:
             return
-        self.game.set_inactive()
+        await self.game.room.force_end(event["player_id"])
         for player in self.game.players:
             player.ready = False
         print(f"\nPlayer Disconnected: {event['player_id']}\n")
         await self.update_group()
 
     async def player_ready(self, event):
-        print(f"\n{self.player_id} is host: {self.host}\n")
         if not self.host or self.game.started:
             return
         player = await self.game.get_player(event["id"])
@@ -166,7 +158,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         for player in self.game.players:
             if not player.ready:
                 return
-        self.game.started = True
+        await self.game.start()
         asyncio.create_task(self.game_loop())
 
     async def player_controls(self, event):
@@ -184,7 +176,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         if "game" in event:
             self.game = event["game"]
         if "ball" in event:
-            self.ball_state = event["ball"]
+            self.game.ball = event["ball"]
 
     async def state_send(self, event):
         data = {
@@ -192,10 +184,10 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         }
         for player in self.game.players:
             selector = "player1"
-            score = self.ball_state.score_1
+            score = self.game.ball.score_1
             if not player.player1:
                 selector = "player2"
-                score = self.ball_state.score_2
+                score = self.game.ball.score_2
             data[selector] = {
                 "x": player.x,
                 "y": player.y,
@@ -204,8 +196,8 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                 "ready": player.ready,
             }
         data["ball"] = {
-            "x": self.ball_state.x,
-            "y": self.ball_state.y,
+            "x": self.game.ball.x,
+            "y": self.game.ball.y,
         }
         await self.send(text_data=json.dumps(data))
 
@@ -224,20 +216,38 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                 "type": "state.update",
                 "players": self.game.players,
                 "game": self.game,
-                "ball": self.ball_state,
+                "ball": self.game.ball,
             },
         )
+
+    async def end_game(self, player_id):
+        await self.channel_layer.group_send(
+            self.game_group_name,
+            {
+                "type": "state.end",
+                "winner_id": str(self.player_id),
+            },
+        )
+
+    async def state_end(self, event):
+        msg = {
+            "type": "gameEnd",
+            "winnerId": event["winner_id"],
+        }
+        await self.send(text_data=json.dumps(msg))
 
     async def game_loop(self):
         if not self.host:
             return
         print("\nGame started.\n")
-        await self.ball_state.reset_pos()
+        await self.game.ball.reset_pos()
         while self.game.started:
             async with self.update_lock:
                 for player in self.game.players:
                     await player.update()
-                await self.ball_state.update(self.game.players)
+                await self.game.ball.update(self.game.players)
+            if player_id := await self.game.update():
+                await self.end_game(player_id)
             await self.update_group()
             await self.send_group()
             await asyncio.sleep(0.03)
