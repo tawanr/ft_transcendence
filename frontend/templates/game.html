@@ -26,15 +26,29 @@
             <div id="gameRoomTitle" class="text-center mx-auto fs-4 mb-2"></div>
         </div>
         <div class="row g-0 mx-auto">
-            <canvas
-                id="gameArea"
-                width="800"
-                height="600"
-                style="border: 1px solid #000000"
-            ></canvas>
+            <div class="card mb-3">
+                <canvas
+                    id="gameArea"
+                    width="800"
+                    height="600"
+                    class="card-body p-0"
+                    style="border-radius: 0.5em"
+                ></canvas>
+            </div>
             <div id="scoreboard" class="row justify-content-around mx-auto px-0">
-                <div id="player1Score" class="col px-0 fs-2">Player 1 : 0</div>
-                <div id="player2Score" class="col px-0 fs-2 text-end">Player 2 : 0</div>
+                <div class="card col">
+                    <div class="card-body">
+                        <div id="player1Score" class="col px-0 fs-4">Player 1 : 0</div>
+                    </div>
+                </div>
+                <div id="playerStatus" class="col text-center my-auto fs-5"></div>
+                <div class="card col">
+                    <div class="card-body">
+                        <div id="player2Score" class="col px-0 fs-4 text-end">
+                            Player 2 : 0
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

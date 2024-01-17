@@ -133,6 +133,17 @@ function gameInit() {
             playerId = data.playerId;
         }
 
+        if (data.type === "gameEnd") {
+            const playerState = document.getElementById("playerStatus");
+            if (data.winnerId == playerId) {
+                playerState.innerText = "You won!";
+                playerState.classList.add("text-success");
+            } else {
+                playerState.innerText = "You lost.";
+                playerState.classList.add("text-danger");
+            }
+        }
+
         if (data.type === constants.SOCKET_GAMESTATE) {
             player1.x = data.player1.x;
             player1.y = data.player1.y;
@@ -153,6 +164,7 @@ function registerClient(playerName) {
             JSON.stringify({
                 type: constants.SOCKET_REGISTER,
                 playerName: playerName,
+                authorization: localStorage.getItem("token") || null,
             })
         );
     }
@@ -162,7 +174,7 @@ function joinRoom() {
     const playerName = document.getElementById("playerName").value;
     const roomCode = document.getElementById("roomCode").value;
     gameSocket = new WebSocket(
-        "ws://" + constants.BACKEND_HOST + constants.BACKEND_SOCKET_API + roomCode + "/"
+        constants.BACKEND_SOCKET_HOST + constants.BACKEND_SOCKET_API + roomCode + "/"
     );
     registerClient(playerName);
     gameInit();
@@ -172,7 +184,7 @@ document.getElementById("joinRoomBtn").addEventListener("click", joinRoom);
 function createRoom() {
     const playerName = document.getElementById("playerName").value;
     gameSocket = new WebSocket(
-        "ws://" + constants.BACKEND_HOST + constants.BACKEND_SOCKET_API
+        constants.BACKEND_SOCKET_HOST + constants.BACKEND_SOCKET_API
     );
     registerClient(playerName);
     gameInit();
@@ -301,4 +313,12 @@ function updateScoreBoard() {
     player2Score.innerHTML = player2.name + " : " + player2.score;
 }
 
+function pageSetup() {
+    const nameInput = document.querySelector("#userRoomNav .nameInput");
+    if (localStorage.getItem("token")) {
+        nameInput.classList.add("d-none");
+    };
+}
+
+pageSetup();
 draw();
