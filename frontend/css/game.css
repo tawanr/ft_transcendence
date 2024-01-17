@@ -1,0 +1,13 @@
+.playerCard {
+    background-color: #555f69;
+    font-family: "Kanit", sans-serif;
+    max-height: 3.5em;
+}
+
+.card {
+    border-color: #555f69;
+}
+
+.playerScore {
+    font-family: "Kanit", sans-serif;
+}

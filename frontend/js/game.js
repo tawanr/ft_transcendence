@@ -125,7 +125,7 @@ function gameInit() {
         const data = JSON.parse(e.data);
         if (data.type === "roomDetails") {
             playerId = data.playerId;
-            document.getElementById("gameRoomTitle").innerText = data.roomCode;
+            document.getElementById("playerStatus").innerText = data.roomCode;
             document.getElementById("userRoomNav").classList.add("d-none");
         }
 

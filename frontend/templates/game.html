@@ -1,7 +1,8 @@
+<link rel="stylesheet" href="/css/game.css" />
 <div id="mainArea" class="d-flex justify-content-center px-5 mt-5">
     <div class="col-10">
         <div id="userRoomNav" class="row mx-auto mb-3">
-            <div class="nameInput col">
+            <div class="nameInput col ps-0">
                 <input
                     type="text"
                     id="playerName"
@@ -22,30 +23,73 @@
             </button>
             <button id="joinRoomBtn" class="col-2 btn btn-primary">Join</button>
         </div>
-        <div id="row">
-            <div id="gameRoomTitle" class="text-center mx-auto fs-4 mb-2"></div>
-        </div>
         <div class="row g-0 mx-auto">
             <div class="card mb-3">
                 <canvas
                     id="gameArea"
                     width="800"
                     height="600"
-                    class="card-body p-0"
-                    style="border-radius: 0.5em"
+                    class="card p-0"
                 ></canvas>
             </div>
             <div id="scoreboard" class="row justify-content-around mx-auto px-0">
-                <div class="card col">
-                    <div class="card-body">
-                        <div id="player1Score" class="col px-0 fs-4">Player 1 : 0</div>
+                <div class="card col playerCard ps-0">
+                    <div class="row g-0 h-100">
+                        <div
+                            id="player1Image"
+                            class="col-md-5 bg-white h-100 overflow-hidden"
+                        >
+                            <img
+                                src="static/42_Logo.png"
+                                class="h-100 w-100 object-fit-cover rounded-start"
+                            />
+                        </div>
+                        <div class="col-md-6 h-100">
+                            <div class="card-body">
+                                <div class="col px-0">
+                                    <span id="player1Name">Player 1</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div id="playerStatus" class="col text-center my-auto fs-5"></div>
-                <div class="card col">
-                    <div class="card-body">
-                        <div id="player2Score" class="col px-0 fs-4 text-end">
-                            Player 2 : 0
+                <div class="col text-center m-auto">
+                    <div class="row">
+                        <div
+                            id="player1Score"
+                            class="playerScore col text-start ms-2 fs-1"
+                        >
+                            0
+                        </div>
+                        <div
+                            id="playerStatus"
+                            class="col text-center my-auto fs-5"
+                        ></div>
+                        <div
+                            id="player2Score"
+                            class="playerScore col text-end me-2 fs-1"
+                        >
+                            0
+                        </div>
+                    </div>
+                </div>
+                <div class="card col playerCard pe-0">
+                    <div class="row g-0 h-100">
+                        <div class="col-md-7 h-100">
+                            <div class="card-body">
+                                <div class="col px-0 text-end">
+                                    <span id="player2Name">Player 2</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            id="player2Image"
+                            class="col-md-5 bg-white rounded-end h-100"
+                        >
+                            <img
+                                src="static/42_Logo.png"
+                                class="h-100 w-100 object-fit-cover rounded-start"
+                            />
                         </div>
                     </div>
                 </div>
