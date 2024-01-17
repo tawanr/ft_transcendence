@@ -61,10 +61,10 @@ class BallState(EntityState):
         for player in players:
             await self.check_collision(player)
         if self.x <= 0:
-            self.score_1 += 1
+            self.score_2 += 1
             await self.reset_pos()
         elif self.x + self.width >= constants.GAME_WIDTH:
-            self.score_2 += 1
+            self.score_1 += 1
             await self.reset_pos()
 
     async def check_collision(self, player: PlayerState):

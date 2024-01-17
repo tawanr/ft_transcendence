@@ -150,6 +150,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
     async def player_leave(self, event):
         if not self.host:
             return
+        self.game.set_inactive()
         for player in self.game.players:
             player.ready = False
         print(f"\nPlayer Disconnected: {event['player_id']}\n")
