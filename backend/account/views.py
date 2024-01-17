@@ -6,6 +6,7 @@ from uuid import uuid4
 import jwt
 from django.contrib.auth.models import User
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_GET, require_POST
 
 from account.forms import RegisterForm
@@ -76,3 +77,12 @@ def logout_view(request):
     if hasattr(request.user, "usertoken"):
         request.user.usertoken.delete()
     return JsonResponse({"success": True})
+
+
+@require_POST
+def refresh_token_view(request):
+    token = get_object_or_404(
+        UserToken, refresh_token=request.COOKIES.get("refresh_token")
+    )
+    token.refresh_access_token()
+    return JsonResponse({"access_token": token.access_token})
