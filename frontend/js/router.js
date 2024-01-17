@@ -24,6 +24,7 @@ const urlRoutes = {
         template: TEMPLATE_DIR + "404.html",
         title: "Page Not Found | " + TITLE,
         description: "",
+        cacheBust: false,
     },
     "/": {
         template: TEMPLATE_DIR + "game.html",
@@ -31,6 +32,7 @@ const urlRoutes = {
         description: "",
         script: JS_DIR + "game.js",
         navLink: "nav-btn-home",
+        cacheBust: false,
     },
     "/game": {
         template: TEMPLATE_DIR + "game.html",
@@ -38,6 +40,7 @@ const urlRoutes = {
         description: "",
         script: JS_DIR + "game.js",
         navLink: "nav-btn-game",
+        cacheBust: true,
     },
     "/tournament": {
         template: TEMPLATE_DIR + "tournament.html",
@@ -45,18 +48,21 @@ const urlRoutes = {
         description: "",
         script: JS_DIR + "tournament.js",
         navLink: "nav-btn-tour",
+        cacheBust: false,
     },
     "/login": {
         template: TEMPLATE_DIR + "login.html",
         title: "Login | " + TITLE,
         description: "",
         script: JS_DIR + "login.js",
+        cacheBust: false,
     },
     "/signup": {
         template: TEMPLATE_DIR + "signup.html",
         title: "Sign Up | " + TITLE,
         description: "",
         script: JS_DIR + "signup.js",
+        cacheBust: false,
     },
 };
 
@@ -96,6 +102,13 @@ const urlLocationHandler = async () => {
     }
     const script = document.createElement("script");
     script.src = route.script;
+
+    // Add a cache busting parameter to the script URL to force reload
+    // In case of game.js since this requires the canvas to be redrawn
+    if (route.cacheBust) {
+        script.src += "?cachebust=" + new Date().getTime();
+    }
+
     script.id = "pageScript";
     script.type = "module";
     document.getElementById("content").appendChild(script);
