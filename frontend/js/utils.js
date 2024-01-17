@@ -35,7 +35,15 @@ export function updateUserNav() {
         console.log(navLoggedIn.classList);
     } else {
         navAuth.classList.add("d-none");
-        document.getElementById("navUserDropdown").innerText = username;
+        const navUserMenu = document.getElementById("navUserDropdown");
+        console.log(navUserMenu.innerHTML);
+        navUserMenu.innerHTML = `
+        <div class="flex-col profileAvatar">
+            <img src="static/42_Logo.png" class="w-100 h-100 object-fit-cover my-auto" />
+        </div>
+        <div class="flex-col h-100 my-auto mx-2">${username}</div>
+        `;
+        console.log(navUserMenu);
         navLoggedIn.classList.remove("d-none");
     }
 }

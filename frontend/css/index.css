@@ -1,3 +1,22 @@
 #navNotifications .dropdown-toggle::after {
     display: none;
 }
+
+.profileAvatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: white;
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+}
+
+.profileAvatar img {
+    display: inline;
+    margin: 0 auto;
+}
+
+.dropdown-toggle::after {
+    margin: auto;
+}

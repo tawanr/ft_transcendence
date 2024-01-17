@@ -153,6 +153,9 @@ function gameInit() {
             player2.score = data.player2.score;
             ball.x = data.ball.x;
             ball.y = data.ball.y;
+            player1.name = data.player1.name || "Player 1";
+            player2.name = data.player2.name || "Player 2";
+
             updateScoreBoard();
         }
     };
@@ -200,9 +203,6 @@ function playerSendReady() {
         })
     );
 }
-
-var player1Score = document.getElementById("player1Score");
-var player2Score = document.getElementById("player2Score");
 
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
@@ -309,8 +309,15 @@ function draw() {
 }
 
 function updateScoreBoard() {
-    player1Score.innerHTML = player1.name + " : " + player1.score;
-    player2Score.innerHTML = player2.name + " : " + player2.score;
+    const player1Name = document.getElementById("player1Name");
+    const player2Name = document.getElementById("player2Name");
+    const player1Score = document.getElementById("player1Score");
+    const player2Score = document.getElementById("player2Score");
+
+    player1Name.innerText = player1.name;
+    player2Name.innerText = player2.name;
+    player1Score.innerText = player1.score;
+    player2Score.innerText = player2.score;
 }
 
 function pageSetup() {
