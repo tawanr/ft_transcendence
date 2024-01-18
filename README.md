@@ -4,7 +4,15 @@
 
 ### Formats
 
+#### Frontend
+
 -   Frontend codes should be formatted with `Prettier`.
+-   Frontend is served directly through `nginx`.
+-   Functions should be documented and typed with [JSDoc](https://www.jsdoc.app/).
+-   Any large components should be encapsulated as WebComponent.
+
+#### Backend
+
 -   Backend codes should be formatted with `Ruff`.
 
 ### Commits
