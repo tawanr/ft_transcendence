@@ -1,8 +1,7 @@
 import * as constants from "./constants.js";
 
-
 export async function initUser() {
-    /** 
+    /**
      * Initialize the state of the user.
      * Check localStorage whether there's a saved token
      * Then fetch the user data from the backend
@@ -32,18 +31,15 @@ export function updateUserNav() {
     if (!token || !username) {
         navAuth.classList.remove("d-none");
         navLoggedIn.classList.add("d-none");
-        console.log(navLoggedIn.classList);
     } else {
         navAuth.classList.add("d-none");
         const navUserMenu = document.getElementById("navUserDropdown");
-        console.log(navUserMenu.innerHTML);
         navUserMenu.innerHTML = `
         <div class="flex-col profileAvatar">
             <img src="static/42_Logo.png" class="w-100 h-100 object-fit-cover my-auto" />
         </div>
         <div class="flex-col h-100 my-auto mx-2">${username}</div>
         `;
-        console.log(navUserMenu);
         navLoggedIn.classList.remove("d-none");
     }
 }
@@ -90,14 +86,16 @@ export async function refreshUserToken() {
     await fetch(api_url, {
         method: "POST",
         credentials: "include",
-    }).then((response) => response.json()).then((data) => {
-        if (!data.access_token) {
-            localStorage.removeItem("token");
-            return false;
-        }
-        localStorage["token"] = data.access_token;
-        return true;
     })
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.access_token) {
+                localStorage.removeItem("token");
+                return false;
+            }
+            localStorage["token"] = data.access_token;
+            return true;
+        });
 }
 
 export function updateNavLinks(route) {
@@ -112,4 +110,30 @@ export function updateNavLinks(route) {
     if ("navLink" in route) {
         document.getElementById(route.navLink).classList.add("active");
     }
+}
+
+export function fetchHTML(filePath) {
+    const baseStyle = `
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+            integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+            crossorigin="anonymous"
+        />
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <link rel="stylesheet" href="/css/index.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Kanit:wght@400&display=swap"
+            rel="stylesheet"
+        />
+    `;
+    return fetch(filePath)
+        .then((response) => {
+            return response.text();
+        })
+        .then((data) => {
+            return baseStyle + data;
+        });
 }

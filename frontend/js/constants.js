@@ -13,6 +13,8 @@ export const BALL_SPEED = 3;
 export const KEY_UP = 38;
 export const KEY_DOWN = 40;
 export const KEY_SPACE = 32;
+export const GAME_WIDTH = 800;
+export const GAME_HEIGHT = 600;
 
 // GAME WEB SOCKET CODES
 export const SOCKET_REGISTER = "client.register";
