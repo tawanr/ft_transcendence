@@ -1,5 +1,9 @@
 # ft_transcendence
 
+Updated: 2024/01/18
+
+![screenshot](images/ft_transcendence.png)
+
 ## Conventions
 
 ### Formats
