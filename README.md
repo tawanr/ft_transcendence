@@ -61,7 +61,8 @@ make backend
 -   [ ] Major module: Implement Two-Factor Authentication (2FA) and JWT
 -   [ ] Major module: Infrastructure Setup with ELK
 -   [ ] Minor module: Monitoring system
--   [x] Major module: Replacing Basic Pong with Server-Side Pong and Implementing an API
+-   [ ] Major module: Replacing Basic Pong with Server-Side Pong and Implementing an API
+-   [x] Major module: Implementing Advanced 3D Techniques
 
 **Total**: 8 Major Modules + 2 Minor Modules
 
