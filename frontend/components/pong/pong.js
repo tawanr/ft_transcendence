@@ -1,4 +1,4 @@
-import { addBaseStyle, fetchHTML } from "../../js/utils.js";
+import { fetchHTML } from "../../js/utils.js";
 import { PongGame } from "./pong.game.js";
 
 class PongElement extends HTMLElement {
@@ -20,8 +20,8 @@ class PongElement extends HTMLElement {
 
     setupGame() {
         this.game = new PongGame(this.shadow);
+        this.game.renderMode = "3d";
         this.game.setup();
-        this.game.draw();
 
         document.addEventListener(
             "keydown",
