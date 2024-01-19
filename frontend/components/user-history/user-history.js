@@ -45,6 +45,10 @@ class UserHistory extends HTMLElement {
     }
 
     connectedCallback() {
+        this.maxList = 25;
+        if (this.hasAttribute("max-list")) {
+            this.maxList = parseInt(this.getAttribute("max-list"));
+        }
         this.histories = [
             new GameHistory(
                 "abc",
@@ -75,7 +79,7 @@ class UserHistory extends HTMLElement {
         this.shadow.innerHTML = html;
 
         const historyList = this.shadow.getElementById("historyList");
-        for (let i = 0; i < 15; i++) {
+        for (let i = 0; i < this.maxList; i++) {
             const historyItem = document.createElement("li");
             const history = this.histories[i % 2];
             historyItem.classList.add("historyItem");
