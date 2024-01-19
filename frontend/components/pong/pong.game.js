@@ -2,13 +2,23 @@ import * as constants from "../../js/constants.js";
 import * as THREE from "three";
 import { Player, PongBall } from "./pong.states.js";
 
+/**
+ * Encapsulates the entire pong game with all states and methods.
+ */
 export class PongGame {
     gameSocket;
 
+    /**
+     * Represents a Pong game.
+     * @constructor
+     * @param {HTMLElement} document - The shadow DOM of the game element.
+     */
     constructor(document) {
-        // Set up DOM
+        // Set up DOM. This is due to the fact that the game is rendered in a shadow DOM
+        // so we can't access the DOM directly from the game.
         this.document = document;
 
+        // Init all default states.
         this.player1 = new Player();
         this.player2 = new Player("player2");
         this.ball = new PongBall();
@@ -26,6 +36,9 @@ export class PongGame {
         this.playerReady = false;
     }
 
+    /**
+     * Init the game socket and register the client.
+     */
     initClient() {
         this.gameSocket.onopen = (e) => {
             this.registerClient(e);
@@ -35,6 +48,10 @@ export class PongGame {
         };
     }
 
+    /**
+     * Register the client to the game socket.
+     * If not done, the server will disconnect the client automatically.
+     */
     registerClient() {
         const playerName = this.document.getElementById("playerName").value;
         this.gameSocket.send(
@@ -46,6 +63,11 @@ export class PongGame {
         );
     }
 
+    /**
+     * Connect to the game socket.
+     * If room code is provided, connect to the room.
+     * Otherwise, connect to a new room.
+     */
     connectRoom() {
         const roomCode = this.document.getElementById("roomCode").value;
         let api_url = constants.BACKEND_SOCKET_HOST + constants.BACKEND_SOCKET_API;
@@ -56,6 +78,10 @@ export class PongGame {
         this.initClient();
     }
 
+    /**
+     * Set up the page.
+     * If the user is logged in, hide the name input.
+     */
     pageSetup() {
         const nameInput = this.document.querySelector("#userRoomNav .nameInput");
         if (localStorage.getItem("token")) {
@@ -70,9 +96,16 @@ export class PongGame {
         }
     }
 
+    /**
+     * Set up the game.
+     * Add event listeners to the buttons.
+     */
     setup() {
         this.pageSetup();
 
+        // Add event listeners' callbacks are wrapped in arrow functions to preserve
+        // the `this` context. Otherwise, `this` will refer to the event target.
+        // Alternatively, we can use `bind` to bind the `this` context to the callback.
         this.document.getElementById("joinRoomBtn").addEventListener("click", () => {
             this.connectRoom();
         });
@@ -81,6 +114,9 @@ export class PongGame {
         });
     }
 
+    /**
+     * Update the game state for local game.
+     */
     localUpdate() {
         if (this.player1Up && this.player1.y > 0) {
             this.player1.y -= 2;
@@ -101,6 +137,9 @@ export class PongGame {
         this.ball.update();
     }
 
+    /**
+     * Draw loop for the game state as 2D rendering.
+     */
     draw() {
         // For local game, need to update draw calls to support without socket game states
         // if (this.localGame) {
@@ -148,6 +187,9 @@ export class PongGame {
         // requestAnimationFrame(this.draw);
     }
 
+    /**
+     * Setup Three.js scene and all objects. Initiate the draw loop.
+     */
     init3d() {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, 800 / 600, 1, 500);
@@ -212,7 +254,7 @@ export class PongGame {
         );
         scene.add(player2Mesh);
 
-        const ballGeometry = new THREE.SphereGeometry(constants.BALL_SIZE / 100, 8, 8);
+        const ballGeometry = new THREE.SphereGeometry(constants.BALL_SIZE / 100);
         const ballMaterial = new THREE.MeshStandardMaterial({ color: 0x666666 });
         const ballMesh = new THREE.Mesh(ballGeometry, ballMaterial);
         ballMesh.castShadow = true;
@@ -233,6 +275,15 @@ export class PongGame {
         this.draw3d(player1Mesh, player2Mesh, ballMesh, scene, camera, renderer);
     }
 
+    /**
+     * Three.js animation loop.
+     * @param {THREE.Mesh} player1Mesh - Mesh for player 1.
+     * @param {THREE.Mesh} player2Mesh - Mesh for player 2.
+     * @param {THREE.Mesh} ballMesh - Mesh for the ball.
+     * @param {THREE.Scene} scene - Scene object.
+     * @param {THREE.PerspectiveCamera} camera - Camera object.
+     * @param {THREE.WebGLRenderer} renderer - Renderer object.
+     */
     draw3d(player1Mesh, player2Mesh, ballMesh, scene, camera, renderer) {
         requestAnimationFrame(() => {
             this.draw3d(player1Mesh, player2Mesh, ballMesh, scene, camera, renderer);
@@ -249,9 +300,13 @@ export class PongGame {
             this.player2.y / 100 - 3 + this.player2.height / 200
         );
         ballMesh.position.set(this.ball.x / 100 - 4, 0.9, this.ball.y / 100 - 3);
+        const cameraTarget = new THREE.Vector3(ballMesh.position.x / 10, 0, 0);
         renderer.render(scene, camera);
     }
 
+    /**
+     * Send a ready signal to the server.
+     */
     playerSendReady() {
         this.playerReady = true;
         this.gameSocket.send(
@@ -262,6 +317,9 @@ export class PongGame {
         );
     }
 
+    /**
+     * Send the player's controls to the server.
+     */
     socketSendControls() {
         this.gameSocket.send(
             JSON.stringify({
@@ -273,6 +331,10 @@ export class PongGame {
         );
     }
 
+    /**
+     * Event handler for keydown events.
+     * @param {Event} e - Keydown event.
+     */
     keyDownHandler(e) {
         var changed = false;
         if (e.keyCode == constants.KEY_UP) {
@@ -299,6 +361,10 @@ export class PongGame {
         }
     }
 
+    /**
+     * Event handler for keyup events.
+     * @param {Event} e - Keyup event.
+     */
     keyUpHandler(e) {
         var changed = false;
         if (e.keyCode == constants.KEY_UP) {
@@ -320,6 +386,10 @@ export class PongGame {
         }
     }
 
+    /**
+     * Event handler for socket messages.
+     * @param {Event} e
+     */
     socketHandler(e) {
         const data = JSON.parse(e.data);
         if (data.type === "roomDetails") {
@@ -359,6 +429,9 @@ export class PongGame {
         }
     }
 
+    /**
+     * Update the scoreboard.
+     */
     updateScoreBoard() {
         const player1Name = this.document.getElementById("player1Name");
         const player2Name = this.document.getElementById("player2Name");
