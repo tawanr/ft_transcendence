@@ -1,6 +1,11 @@
 .friendlistItem {
     min-width: 150px;
-    height: 80px;
+    height: 60px;
+    background-color: #232629;
+}
+
+.friendlistItem:hover {
+    background-color: #2a2d30;
 }
 
 .friendlistScroll {
@@ -8,9 +13,13 @@
     overflow: auto;
 }
 
+.friendStatus {
+    font-size: 0.8em;
+}
+
 .avatar {
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
     border-radius: 50%;
     background-color: white;
     position: relative;

@@ -1,6 +1,11 @@
 .historyItem {
     min-width: 600px;
     height: 100px;
+    background-color: #232629;
+}
+
+.historyItem:hover {
+    background-color: #2a2d30;
 }
 
 .historyScroll {
