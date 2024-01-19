@@ -27,10 +27,10 @@ const urlRoutes = {
         cacheBust: false,
     },
     "/": {
-        template: TEMPLATE_DIR + "game.html",
+        template: TEMPLATE_DIR + "home.html",
         title: "Home | " + TITLE,
         description: "",
-        script: JS_DIR + "game.js",
+        script: JS_DIR + "home.js",
         navLink: "nav-btn-home",
         cacheBust: false,
     },
