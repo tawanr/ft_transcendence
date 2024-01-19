@@ -30,4 +30,3 @@ function checkLoggedIn() {
 }
 
 checkLoggedIn();
-
