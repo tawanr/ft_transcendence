@@ -1,0 +1,8 @@
+.tournamentChat {
+    flex-grow: 1;
+    flex-basis: 500px;
+}
+
+.tournamentList {
+    flex-basis: 400px;
+}

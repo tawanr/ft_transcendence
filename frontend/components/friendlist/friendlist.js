@@ -3,10 +3,12 @@ import { fetchHTML } from "../../js/utils.js";
 class FriendList extends HTMLElement {
     constructor() {
         super();
+        this.friendAddBtn = false;
         this.shadow = this.attachShadow({ mode: "closed" });
         fetchHTML("/components/friendlist/friendlist.html").then((html) => {
             this.render(html);
         });
+        this.cardTitle = this.getAttribute("title");
     }
 
     connectedCallback() {
@@ -30,6 +32,9 @@ class FriendList extends HTMLElement {
                 status: "ingame",
             },
         ];
+
+        this.friendDelBtn = this.hasAttribute("friend-del-btn");
+        this.friendStatusBadge = this.hasAttribute("show-status");
     }
 
     getStatusBadge(player) {
@@ -70,16 +75,30 @@ class FriendList extends HTMLElement {
                         <div class="text-center friendIcon align-middle">
                             <a href="#"><img src="static/chat-fill.svg" /></a>
                         </div>
-                        <div class="text-center friendIcon align-middle">
+                        <div id="friendDelBtn" class="text-center friendIcon align-middle">
                             <a href="#"><img src="static/x-lg.svg" /></a>
                         </div>
                     </div>
                 </div>
             </div>
             `;
-            console.log(friendItem);
-
             friendList.appendChild(friendItem);
+        }
+
+        if (!this.friendStatusBadge) {
+            this.shadow.querySelectorAll(".friendStatus").forEach((element) => {
+                element.classList.add("d-none");
+            });
+        }
+        if (!this.friendDelBtn) {
+            this.shadow.querySelectorAll("#friendDelBtn").forEach((element) => {
+                element.classList.add("d-none");
+            });
+        }
+
+        if (this.cardTitle) {
+            const cardTitle = this.shadow.getElementById("cardTitle");
+            cardTitle.innerText = this.cardTitle;
         }
     }
 }

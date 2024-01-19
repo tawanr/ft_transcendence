@@ -1,0 +1,72 @@
+.scroll::-webkit-scrollbar-track
+{
+	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+	background-color: transparent;
+}
+
+.scroll::-webkit-scrollbar
+{
+	width: 5px;
+	background-color: transparent;
+}
+
+.scroll::-webkit-scrollbar-thumb
+{
+	background-color: #555555;
+	border: 0;
+}
+
+.chatRoom {
+    min-width: 500px;
+    min-height: 400px;
+    height: 600px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+#chatInput {
+    background-color: transparent;
+    border: 0;
+}
+
+#chatSend {
+    border: 0;
+}
+
+.chatItem {
+    width: 100%;
+    min-height: 50px;
+}
+
+.chatBubble {
+    padding: 0.6em 1.3em;
+    margin: 0.3em;
+}
+
+.chatReceived .chatBubble {
+    background-color: #234343;
+}
+
+.chatSent .chatBubble {
+    background-color: var(--bs-primary);
+}
+
+.chatSent {
+    justify-content: flex-end;
+}
+
+.chatDate {
+    width: 100%;
+    text-align: center;
+    font-size: 0.8em;
+    color: var(--bs-gray-700);
+    margin-top: 2em;
+}
+
+.chatSender {
+    font-weight: 500;
+    margin-top: 0.8em;
+    margin-left: 1em;
+    margin-bottom: 0.2em;
+}
