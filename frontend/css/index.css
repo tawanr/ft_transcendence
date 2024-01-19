@@ -20,3 +20,15 @@
 .dropdown-toggle::after {
     margin: auto;
 }
+
+.wrapper {
+    display: grid;
+    grid-template-columns:
+        1fr
+        min(1200px, 100%)
+        1fr;
+}
+
+.wrapper > * {
+    grid-column: 2;
+}
