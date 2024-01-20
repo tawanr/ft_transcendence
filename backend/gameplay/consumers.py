@@ -125,8 +125,8 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             await self.update_group()
             await self.send_group()
 
-        # if not self.player_id:
-        #     return
+        if not self.player_id:
+            return
 
         message = {
             **data,

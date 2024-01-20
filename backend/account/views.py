@@ -7,10 +7,12 @@ import jwt
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils.decorators import method_decorator
+from django.views import View
 from django.views.decorators.http import require_GET, require_POST
 
 from account.forms import RegisterForm
-from account.models import UserToken
+from account.models import UserFriendInvite, UserToken
 from backend.decorators import login_required_401
 
 
@@ -86,3 +88,62 @@ def refresh_token_view(request):
     )
     token.refresh_access_token()
     return JsonResponse({"access_token": token.access_token})
+
+
+@method_decorator(login_required_401, name="dispatch")
+class FriendsView(View):
+    def get(self, request):
+        friends = request.user.details.friends.all()
+        return JsonResponse(
+            {
+                "data": [
+                    {
+                        "playerName": friend.user.username,
+                        "playerId": friend.user.id,
+                        "avatar": friend.avatar.url if friend.avatar else "",
+                        "status": "online",
+                    }
+                    for friend in friends
+                ]
+            }
+        )
+
+    def post(self, request):
+        payload = json.loads(request.body)
+        friend = User.objects.filter(username=payload["username"]).first()
+        if not friend:
+            return JsonResponse(
+                {"success": False, "errors": {"username": "Username does not exist"}},
+                status=400,
+            )
+        if friend == request.user.details:
+            return JsonResponse(
+                {"success": False, "errors": {"username": "Cannot add yourself"}},
+                status=400,
+            )
+        if friend in request.user.details.friends.all():
+            return JsonResponse(
+                {"success": False, "errors": {"username": "Already friends"}},
+                status=400,
+            )
+        if UserFriendInvite.objects.filter(
+            from_user=request.user, to_user=friend
+        ).exists():
+            return JsonResponse(
+                {"success": False, "errors": {"username": "Invite already sent"}}
+            )
+        UserFriendInvite.objects.create(from_user=request.user, to_user=friend)
+        return JsonResponse({"success": True, "details": "Invite sent"})
+
+
+@login_required_401
+@require_POST
+def accept_friend_invite_view(request):
+    payload = json.loads(request.body)
+    inviter = get_object_or_404(User, username=payload["username"])
+    invite = get_object_or_404(
+        UserFriendInvite, from_user=inviter, to_user=request.user
+    )
+    invite.to_user.details.friends.add(invite.from_user.details)
+    invite.delete()
+    return JsonResponse({"success": True})

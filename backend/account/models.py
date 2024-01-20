@@ -36,3 +36,28 @@ class UserToken(models.Model):
         }
         token = jwt.encode(claims, settings.JWT_KEY, algorithm="HS256")
         return token
+
+
+class UserDetails(models.Model):
+    user = models.OneToOneField(
+        "auth.User", on_delete=models.CASCADE, related_name="details"
+    )
+    avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
+    friends = models.ManyToManyField("self")
+
+
+class UserFriendInvite(models.Model):
+    from_user = models.ForeignKey(
+        "auth.User", on_delete=models.CASCADE, related_name="sent_invites"
+    )
+    to_user = models.ForeignKey(
+        "auth.User", on_delete=models.CASCADE, related_name="received_invites"
+    )
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ["from_user", "to_user"]
+
+    def accept(self):
+        self.from_user.details.friends.add(self.to_user)
+        self.delete()

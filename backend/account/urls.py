@@ -8,4 +8,6 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     path("refresh/", views.refresh_token_view, name="refresh_token"),
     path("user/", views.user_view, name="user"),
+    path("friends/", views.FriendsView.as_view(), name="friends"),
+    path("friends/accept/", views.accept_friend_invite_view, name="invite_accept"),
 ]

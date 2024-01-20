@@ -151,3 +151,4 @@ CORS_ALLOWED_ORIGINS = [
 SESSION_COOKIE_SAMESITE = "None"
 
 JWT_KEY = os.environ.get("JWT_KEY")
+MEDIA_ROOT = os.path.join(BASE_DIR, "uploads")
