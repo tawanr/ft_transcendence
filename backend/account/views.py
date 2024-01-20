@@ -5,11 +5,13 @@ from uuid import uuid4
 
 import jwt
 from django.contrib.auth.models import User
+from django.db.models import Case, Q, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.http import require_GET, require_POST
+from gameplay.models import GameRoom
 
 from account.forms import RegisterForm
 from account.models import UserFriendInvite, UserToken
@@ -147,3 +149,41 @@ def accept_friend_invite_view(request):
     invite.to_user.details.friends.add(invite.from_user.details)
     invite.delete()
     return JsonResponse({"success": True})
+
+
+@login_required_401
+@require_GET
+def list_game_history(request):
+    print(f"{request.user.id = }")
+    qs_history = (
+        GameRoom.objects.filter(players__in=[request.user])
+        .order_by("-created_date")
+        .annotate(
+            is_winner=Case(
+                When(
+                    Q(player1_name=request.user.username) & Q(player1_won=True),
+                    then=Value(True),
+                ),
+                When(
+                    Q(player2_name=request.user.username) & Q(player1_won=False),
+                    then=Value(True),
+                ),
+                default=Value(False),
+            )
+        )
+    )
+    return JsonResponse(
+        {
+            "data": [
+                {
+                    "player1Name": game.player1_name,
+                    "player2Name": game.player2_name,
+                    "isFinished": game.is_finished,
+                    "score": f"{game.player1_score} - {game.player2_score}",
+                    "isWinner": game.is_winner,
+                    "date": game.created_date,
+                }
+                for game in qs_history
+            ]
+        }
+    )
