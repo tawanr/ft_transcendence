@@ -70,7 +70,6 @@ class GameRoom(models.Model):
     is_active = models.BooleanField(default=True)
     is_started = models.BooleanField(default=False)
     is_finished = models.BooleanField(default=False)
-    # player1_won = models.BooleanField(default=False)
     game_code = models.CharField(max_length=10, default=generate_game_code)
     game_type = models.CharField(max_length=100, default="pong")
     tournament = models.ForeignKey(Tournament, on_delete=models.SET_NULL, null=True)
@@ -105,7 +104,7 @@ class GameRoom(models.Model):
     async def add_player(self, player):
         current_player_count = await self.players.acount()
         if self.tournament and await self.players.filter(player=player).aexists():
-            game_player = await self.players.aget(player=player)
+            game_player = await GamePlayer.objects.get(player=player, game_room=self)
             game_player.is_active = True
             game_player.save()
             return
@@ -143,11 +142,47 @@ class GameRoom(models.Model):
     async def force_end(self, player_id):
         self.is_active = False
         self.is_finished = True
-        await self.players.exclude(session_id=player_id).aupdate(is_winner=True)
+        await (
+            GamePlayer.objects.filter(game_room=self)
+            .exclude(session_id=player_id)
+            .aupdate(is_winner=True)
+        )
         await self.asave()
 
     async def victory(self, player_id):
         self.is_active = False
         self.is_finished = True
-        await self.players.filter(session_id=player_id).aupdate(is_winner=True)
+        await (
+            GamePlayer.objects.filter(game_room=self)
+            .filter(session_id=player_id)
+            .aupdate(is_winner=True)
+        )
         await self.asave()
+
+    def get_player_by_num(self, player_number) -> GamePlayer:
+        return GamePlayer.objects.filter(
+            game_room=self, player_number=player_number
+        ).first()
+
+    def get_scores(self) -> str:
+        score_str = ""
+        players = (
+            GamePlayer.objects.filter(game_room=self, is_active=True)
+            .order_by("player_number")
+            .all()
+        )
+        for i in range(self.max_players):
+            if score_str:
+                score_str += " - "
+            if i >= len(players):
+                score_str += "0"
+                continue
+            score_str += str(players[i].score)
+        return score_str
+
+    def is_winner(self, user):
+        return (
+            GamePlayer.objects.filter(game_room=self, is_active=True)
+            .filter(player=user, is_winner=True)
+            .exists()
+        )

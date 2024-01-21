@@ -163,66 +163,42 @@ def accept_friend_invite_view(request):
 @login_required_401
 @require_GET
 def list_game_history(request):
-    qs_get_player1_avatar = Case(
-        When(
-            Q(player1_name=request.user.username),
-            then=Value(
-                request.user.details.avatar.url if request.user.details.avatar else ""
-            ),
-        ),
-        When(
-            Count("players") == 2,
-            then=Subquery(
-                User.objects.get(username=OuterRef("player1_name")).values("avatar")[:1]
-            ),
-        ),
-    )
     qs_history = (
-        GameRoom.objects.filter(players__in=[request.user])
+        GameRoom.objects.filter(players=request.user)
+        .prefetch_related("players")
         .order_by("-created_date")
-        .annotate(
-            is_winner=Case(
-                When(
-                    Q(player1_name=request.user.username) & Q(player1_won=True),
-                    then=Value(True),
-                ),
-                When(
-                    Q(player2_name=request.user.username) & Q(player1_won=False),
-                    then=Value(True),
-                ),
-                default=Value(False),
-            ),
-            player1_avatar=qs_get_player1_avatar,
-            # registered_players=Count("players"),
-            # opponent=When(
-            #     Exact(Count("players"), 2),
-            #     then=F(
-            #         Subquery(
-            #             GameRoom.objects.get(id=OuterRef("pk"))
-            #             .players.exclude(username=request.user.username)
-            #             .values("username")[:1]
-            #         ),
-            #     ),
-            # ),
-        )
     )
-    return JsonResponse(
-        {
-            "data": [
-                {
-                    "player1Name": game.player1_name,
-                    "player2Name": game.player2_name,
-                    "isFinished": game.is_finished,
-                    "score": f"{game.player1_score} - {game.player2_score}",
-                    "isWinner": game.is_winner,
-                    "date": game.created_date,
-                    "playerCount": game.player_count,
-                    "opponent": game.opponent,
-                }
-                for game in qs_history
-            ]
+    games = []
+    # TODO: Should probably be refactored if time permits
+    for game in qs_history:
+        player1 = game.get_player_by_num(1)
+        player2 = game.get_player_by_num(2)
+        history = {
+            "player1Name": "",
+            "player1Avatar": "",
+            "player2Name": "",
+            "player2Avatar": "",
+            "isFinished": game.is_finished,
+            "score": game.get_scores(),
+            "isWinner": game.is_winner(request.user),
+            "date": game.created_date,
         }
-    )
+        if player1:
+            history["player1Name"] = player1.name
+            history["player1Avatar"] = (
+                player1.player.details.avatar.url
+                if player1.player and player1.player.details.avatar
+                else ""
+            )
+        if player2:
+            history["player2Name"] = player2.name
+            history["player2Avatar"] = (
+                player2.player.details.avatar.url
+                if player2.player and player2.player.details.avatar
+                else ""
+            )
+        games.append(history)
+    return JsonResponse({"data": games})
 
 
 @login_required_401
