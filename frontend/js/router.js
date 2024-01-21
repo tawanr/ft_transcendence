@@ -64,6 +64,13 @@ const urlRoutes = {
         script: JS_DIR + "signup.js",
         cacheBust: false,
     },
+    "/profile": {
+        template: TEMPLATE_DIR + "profile.html",
+        title: "Profile | " + TITLE,
+        description: "",
+        script: JS_DIR + "profile.js",
+        cacheBust: false,
+    },
 };
 
 const urlRoute = (event) => {
