@@ -6,3 +6,7 @@
 .tournamentList {
     flex-basis: 400px;
 }
+
+.tournamentBracket {
+    overflow: hidden;
+}

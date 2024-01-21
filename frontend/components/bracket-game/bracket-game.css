@@ -1,0 +1,34 @@
+.tournamentGame {
+    width: 200px;
+}
+
+.playerCard {
+    color: black;
+    /* padding-top: 0.3em;
+    padding-bottom: 0.3em; */
+    padding: 0;
+    background-color: azure;
+    font-weight: 400;
+    font-size: 0.78rem;
+    font-family: "Kanit", sans-serif;
+    height: 1.8rem;
+}
+
+.playerWinner {
+    font-size: 0.8rem;
+    background-color: #80abe9;
+    font-weight: bold;
+}
+
+.playerScore {
+    border-left: 1px solid black;
+    padding: 0.3rem 0.6rem;
+    width: 2rem;
+    height: 1.8rem;
+}
+
+.playerName {
+    padding: 0.3rem;
+    margin-left: 0.6rem;
+}
+
