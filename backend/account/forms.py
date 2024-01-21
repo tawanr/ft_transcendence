@@ -20,3 +20,8 @@ class RegisterForm(forms.Form):
         if len(password) < 8:
             raise forms.ValidationError("Password must be at least 8 characters long")
         return password
+
+
+class UploadAvatarForm(forms.Form):
+    title = forms.CharField(max_length=100)
+    image = forms.ImageField()

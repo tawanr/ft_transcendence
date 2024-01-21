@@ -2,10 +2,12 @@ import binascii
 import json
 import time
 from uuid import uuid4
+from xml.dom.domreg import registered
 
 import jwt
 from django.contrib.auth.models import User
-from django.db.models import Case, Q, Value, When
+from django.db.models import Case, Count, F, OuterRef, Q, Subquery, Value, When
+from django.db.models.lookups import Exact
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -13,8 +15,9 @@ from django.views import View
 from django.views.decorators.http import require_GET, require_POST
 from gameplay.models import GameRoom
 
-from account.forms import RegisterForm
+from account.forms import RegisterForm, UploadAvatarForm
 from account.models import UserFriendInvite, UserToken
+from account.services import handle_upload_avatar
 from backend.decorators import login_required_401
 
 
@@ -22,7 +25,13 @@ from backend.decorators import login_required_401
 @login_required_401
 def user_view(request):
     user = User.objects.get(id=request.user.id)
-    return JsonResponse({"username": user.username, "email": user.email})
+    return JsonResponse(
+        {
+            "username": user.username,
+            "email": user.email,
+            "avatar": user.details.avatar.url if user.details.avatar else "",
+        }
+    )
 
 
 @require_POST
@@ -154,7 +163,20 @@ def accept_friend_invite_view(request):
 @login_required_401
 @require_GET
 def list_game_history(request):
-    print(f"{request.user.id = }")
+    qs_get_player1_avatar = Case(
+        When(
+            Q(player1_name=request.user.username),
+            then=Value(
+                request.user.details.avatar.url if request.user.details.avatar else ""
+            ),
+        ),
+        When(
+            Count("players") == 2,
+            then=Subquery(
+                User.objects.get(username=OuterRef("player1_name")).values("avatar")[:1]
+            ),
+        ),
+    )
     qs_history = (
         GameRoom.objects.filter(players__in=[request.user])
         .order_by("-created_date")
@@ -169,7 +191,19 @@ def list_game_history(request):
                     then=Value(True),
                 ),
                 default=Value(False),
-            )
+            ),
+            player1_avatar=qs_get_player1_avatar,
+            # registered_players=Count("players"),
+            # opponent=When(
+            #     Exact(Count("players"), 2),
+            #     then=F(
+            #         Subquery(
+            #             GameRoom.objects.get(id=OuterRef("pk"))
+            #             .players.exclude(username=request.user.username)
+            #             .values("username")[:1]
+            #         ),
+            #     ),
+            # ),
         )
     )
     return JsonResponse(
@@ -182,8 +216,24 @@ def list_game_history(request):
                     "score": f"{game.player1_score} - {game.player2_score}",
                     "isWinner": game.is_winner,
                     "date": game.created_date,
+                    "playerCount": game.player_count,
+                    "opponent": game.opponent,
                 }
                 for game in qs_history
             ]
         }
     )
+
+
+@login_required_401
+@require_POST
+def avatar_upload_view(request):
+    form = UploadAvatarForm(request.POST, request.FILES)
+    if form.is_valid():
+        file_path = handle_upload_avatar(request.FILES["image"])
+        request.user.details.avatar = file_path
+        request.user.details.save()
+        return JsonResponse(
+            {"success": True, "image_path": request.user.details.avatar.url}
+        )
+    return JsonResponse({"success": False, "errors": form.errors})
