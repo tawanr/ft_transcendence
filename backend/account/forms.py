@@ -23,5 +23,4 @@ class RegisterForm(forms.Form):
 
 
 class UploadAvatarForm(forms.Form):
-    title = forms.CharField(max_length=100)
     image = forms.ImageField()
