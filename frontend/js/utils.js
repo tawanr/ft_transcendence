@@ -77,8 +77,10 @@ export async function fetchUserData(token) {
             if (!data) {
                 return null;
             }
-            if (data.avatar) {
+            if (data.avatar && data.avatar.length > 0) {
                 localStorage["userAvatar"] = constants.BACKEND_HOST + data.avatar;
+            } else {
+                localStorage.removeItem("userAvatar");
             }
             return data.username;
         });
