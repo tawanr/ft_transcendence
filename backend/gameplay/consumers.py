@@ -73,10 +73,9 @@ class GameplayConsumer(AsyncWebsocketConsumer):
 
     async def set_players(self):
         players = await self.game.room.get_players()
-        self.game.players[0].player_id = players[0]["player_id"]
-        self.game.players[0].player_name = players[0]["name"]
-        self.game.players[1].player_id = players[1]["player_id"]
-        self.game.players[1].player_name = players[1]["name"]
+        for idx, player in enumerate(players):
+            self.game.players[idx].player_id = player["player_id"]
+            self.game.players[idx].player_name = player["name"]
         if self.game.players[0].player_id == self.player_id:
             self.host = True
 
