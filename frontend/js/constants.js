@@ -21,3 +21,6 @@ export const SOCKET_REGISTER = "client.register";
 export const SOCKET_GAMESTATE = "gameState";
 export const SOCKET_READY = "player.ready";
 export const SOCKET_PLAYER_CONTROLS = "player.controls";
+
+// ASSETS
+export const USER_AVATAR = "static/42_Logo.png";

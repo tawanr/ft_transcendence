@@ -26,9 +26,11 @@ export function updateUserNav() {
      */
     const token = localStorage.getItem("token");
     const username = localStorage.getItem("username");
+    const userAvatar = localStorage.getItem("userAvatar");
     const navAuth = document.getElementById("navAuth");
     const navLoggedIn = document.getElementById("navLoggedIn");
     if (!token || !username) {
+        localStorage.removeItem("userAvatar");
         navAuth.classList.remove("d-none");
         navLoggedIn.classList.add("d-none");
     } else {
@@ -36,7 +38,9 @@ export function updateUserNav() {
         const navUserMenu = document.getElementById("navUserDropdown");
         navUserMenu.innerHTML = `
         <div class="flex-col profileAvatar">
-            <img src="static/42_Logo.png" class="w-100 h-100 object-fit-cover my-auto" />
+            <img src="${
+                userAvatar ? userAvatar : constants.USER_AVATAR
+            }" class="w-100 h-100 object-fit-cover my-auto" />
         </div>
         <div class="flex-col h-100 my-auto mx-2">${username}</div>
         `;
@@ -72,6 +76,9 @@ export async function fetchUserData(token) {
         .then((data) => {
             if (!data) {
                 return null;
+            }
+            if (data.avatar) {
+                localStorage["userAvatar"] = constants.BACKEND_HOST + data.avatar;
             }
             return data.username;
         });
