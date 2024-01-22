@@ -12,6 +12,11 @@
     font-size: 0.78rem;
     font-family: "Kanit", sans-serif;
     height: 1.8rem;
+    background-color: #dddddd;
+}
+
+.playerCard:hover {
+    background-color: #eeeeee;
 }
 
 .playerWinner {
@@ -20,11 +25,16 @@
     font-weight: bold;
 }
 
+.playerWinner:hover {
+    background-color: #91b6eb;
+}
+
 .playerScore {
     border-left: 1px solid black;
     padding: 0.3rem 0.6rem;
     width: 2rem;
     height: 1.8rem;
+    background-color: #44444466;
 }
 
 .playerName {

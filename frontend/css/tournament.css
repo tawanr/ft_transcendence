@@ -8,5 +8,13 @@
 }
 
 .tournamentBracket {
-    overflow: hidden;
+    max-height: 80vh;
+}
+
+.bracketContent {
+    overflow: scroll;
+}
+
+.bracketContent::-webkit-scrollbar {
+    display: none;
 }

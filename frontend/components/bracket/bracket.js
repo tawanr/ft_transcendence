@@ -13,7 +13,7 @@ class Bracket extends HTMLElement {
     }
 
     connectedCallback() {
-        this.tournamentSize = 8;
+        this.tournamentSize = 16;
         this.bracket = [
             {
                 finished: true,
@@ -108,6 +108,7 @@ class Bracket extends HTMLElement {
     render(html) {
         this.shadow.innerHTML = html;
 
+        /** @type {HTMLElement} */
         const bracket = this.shadow.getElementById("tourBracket");
 
         let currentRoundLimit = this.tournamentSize / 2 || this.bracket.length * 2;
@@ -117,8 +118,8 @@ class Bracket extends HTMLElement {
 
         for (let i = 0; i < this.tournamentSize - 1; i++) {
             if (i === currentRoundLimit) {
-                currentRoundLimit += currentRoundLimit / 2;
                 currentRoundCount /= 2;
+                currentRoundLimit += currentRoundCount;
                 bracket.appendChild(bracketColumn);
                 bracketColumn = document.createElement("div");
                 bracketColumn.classList.add("bracketColumn");
@@ -146,7 +147,11 @@ class Bracket extends HTMLElement {
             }
             const bracketGame = document.createElement("bracket-game");
             bracketGame.classList.add("bracketGame");
-            bracketGame.players = this.bracket[i].players;
+            let players = [];
+            if (i < this.bracket.length) {
+                players = this.bracket[i].players;
+            }
+            bracketGame.players = players;
             bracketColumn.appendChild(bracketGame);
         }
 

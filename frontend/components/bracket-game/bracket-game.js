@@ -24,6 +24,9 @@ class BracketGame extends HTMLElement {
         for (let i = 0; i < 2; i++) {
             const player = this.players[i];
             const playerCard = playerCards[i];
+            if (!player) {
+                continue;
+            }
             if (player.name) {
                 playerCard.querySelector(".playerName").innerText = player.name;
                 playerCard.querySelector(".playerScore").innerText =
