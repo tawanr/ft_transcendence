@@ -5,6 +5,13 @@
     "dockerComposeFile": "docker-compose.yml",
     "service": "app",
     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ritwickdey.liveserver"
+            ]
+        }
+    },
     "features": {
         "ghcr.io/devcontainers-contrib/features/ruff:1": {}
     },
@@ -13,11 +20,16 @@
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // This can be used to network with other containers or the host.
     "forwardPorts": [
-        "80",
-        "5000",
-        "5432",
-        "8000",
-        "8080"
+        // "80",
+        // "5000",
+        // "5432",
+        // "8000",
+        // "8080"
+        80,
+        5000,
+        5432,
+        8000,
+        8080
     ],
     // Use 'postCreateCommand' to run commands after the container is created.
     "postCreateCommand": ".devcontainer/postCreate.sh"

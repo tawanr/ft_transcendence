@@ -3,6 +3,8 @@ import { fetchHTML } from "../../js/utils.js";
 class ChatRoom extends HTMLElement {
     constructor() {
         super();
+        //Create shadow DOM for ChatRoom element
+        //closed => not accessible from JS outside of the ChatRoom
         this.shadow = this.attachShadow({ mode: "closed" });
         fetchHTML("/components/chat-room/chat-room.html").then((html) => {
             this.html = html;
