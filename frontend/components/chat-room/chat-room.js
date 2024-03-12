@@ -1,4 +1,5 @@
 import { fetchHTML } from "../../js/utils.js";
+import * as constants from "../../js/constants.js";
 
 class ChatRoom extends HTMLElement {
     constructor() {
@@ -10,6 +11,7 @@ class ChatRoom extends HTMLElement {
             this.html = html;
             this.render();
         });
+
         this.chats = [
             {
                 senderName: "abc",
@@ -104,6 +106,15 @@ class ChatRoom extends HTMLElement {
         ];
         this.groupChat = this.hasAttribute("group-chat");
     }
+
+    //connect to the chat socket
+    // connectRoom() {
+    //     let playerName = [player1, player2];
+    //     playerName.sort();
+    //     const roomName = `room_${playerName[0]}_${playerName[1]}`;
+    //     let api_url = constants.BACKEND_SOCKET_HOST + constants.BACKEND_CHATSOCKET_API + roomName;
+    //     this.chatSocket = new WebSocket(api_url);
+    // }
 
     connectedCallback() {}
 
