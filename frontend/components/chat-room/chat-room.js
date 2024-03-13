@@ -12,6 +12,23 @@ class ChatRoom extends HTMLElement {
             this.render();
         });
 
+        this.senderDummy = "Player1"
+        this.connectRoom()
+        this.chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data)
+            console.log(data)
+            console.log(data.message)
+            console.log(data.sender)
+            console.log(data.recipient)
+            this.chats = [
+                {
+                    senderName: "abc",
+                    message: "hello",
+                    date: "2021-07-01",
+                    isSent: false,
+                },
+            ];
+        }
         this.chats = [
             {
                 senderName: "abc",
@@ -108,13 +125,24 @@ class ChatRoom extends HTMLElement {
     }
 
     //connect to the chat socket
-    // connectRoom() {
-    //     let playerName = [player1, player2];
-    //     playerName.sort();
-    //     const roomName = `room_${playerName[0]}_${playerName[1]}`;
-    //     let api_url = constants.BACKEND_SOCKET_HOST + constants.BACKEND_CHATSOCKET_API + roomName;
-    //     this.chatSocket = new WebSocket(api_url);
-    // }
+    connectRoom() {
+        let playerName = ["Player55", "Player2"];
+        playerName.sort();
+        const roomName = `room_${playerName[0]}_${playerName[1]}`;
+        let api_url = constants.BACKEND_SOCKET_HOST + constants.BACKEND_CHATSOCKET_API + roomName;
+        this.chatSocket = new WebSocket(api_url);
+        this.chatSocket.onopen = () => {
+            let auth = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsIm5hbWUiOiJ0ZXN0X3VzZXIyIiwiaWF0IjoxNzEwMzY0MTE3LCJleHAiOjE3MTAzNjU5MTd9.Bhv0NNkDsnirfBR1ZCbUpupJiZdjUf167-9LVqjhrFM" || null
+            let connect = auth
+            this.chatSocket.send(
+            JSON.stringify({
+                // authorization: localStorage.getItem("token") || null,
+                authorization: auth,
+                connect: connect
+            })
+        );
+        }
+    }
 
     connectedCallback() {}
 
