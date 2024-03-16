@@ -140,8 +140,26 @@ class ChatRoom extends HTMLElement {
             chatList.appendChild(chatItem);
         }
 
-        this.shadow.getElementById("chatForm").addEventListener("submit", (e) => {
+        this.shadow.getElementById("chatForm").addEventListener("submit", async (e) => {
             e.preventDefault();
+
+            // TODO: change endpoint to correct one
+            const api_url = constants.BACKEND_HOST + "/account/chat-room/";
+            await fetch(api_url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: "Bearer " + localStorage.getItem("token"),
+                },
+            }).then((response) => {
+                if (response.status === 200) {
+                    console.log("Logged out successfully");
+                } else {
+                    console.error("Failed submit chat message", response.json());
+                    return;
+                }
+            });
+
             this.sendMessage();
         });
     }
