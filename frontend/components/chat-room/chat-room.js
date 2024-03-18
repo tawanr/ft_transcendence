@@ -16,6 +16,7 @@ class ChatRoom extends HTMLElement {
         this.connectRoom()
         this.chatSocket.onmessage = function (e) {
             const data = JSON.parse(e.data)
+            console.log("Test log from onmessage")
             console.log(data)
             console.log(data.message)
             console.log(data.sender)
@@ -120,6 +121,12 @@ class ChatRoom extends HTMLElement {
                 date: "2021-07-03",
                 isSent: true,
             },
+            {
+                senderName: "xxx",
+                message: "wanna play?",
+                date: "2021-07-02",
+                isSent: false,
+            },
         ];
         this.groupChat = this.hasAttribute("group-chat");
     }
@@ -132,15 +139,16 @@ class ChatRoom extends HTMLElement {
         let api_url = constants.BACKEND_SOCKET_HOST + constants.BACKEND_CHATSOCKET_API + roomName;
         this.chatSocket = new WebSocket(api_url);
         this.chatSocket.onopen = () => {
-            let auth = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsIm5hbWUiOiJ0ZXN0X3VzZXIyIiwiaWF0IjoxNzEwMzY0MTE3LCJleHAiOjE3MTAzNjU5MTd9.Bhv0NNkDsnirfBR1ZCbUpupJiZdjUf167-9LVqjhrFM" || null
+            let auth = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsIm5hbWUiOiJ0ZXN0X3VzZXI1NSIsImlhdCI6MTcxMDUzNDEzOSwiZXhwIjoxNzEwNTM1OTM5fQ.H8BwZtgRy1sjRnKHML8uVgLNWPQvXjD0DIG_jGt8ykc" || null
+            // let auth = localStorage.getItem("token") || null
             let connect = auth
             this.chatSocket.send(
-            JSON.stringify({
-                // authorization: localStorage.getItem("token") || null,
-                authorization: auth,
-                connect: connect
-            })
-        );
+                JSON.stringify({
+                    // authorization: localStorage.getItem("token") || null,
+                    authorization: auth,
+                    connect: connect
+                })
+            );
         }
     }
 

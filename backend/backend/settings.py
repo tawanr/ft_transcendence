@@ -34,6 +34,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     "account",
     "gameplay",
+	"chat",
     "daphne",
     "corsheaders",
     "django.contrib.admin",
