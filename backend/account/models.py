@@ -32,7 +32,7 @@ class UserToken(models.Model):
             "sub": self.user.id,
             "name": self.user.username,
             "iat": int(time.time()),
-            "exp": int(time.time()) + (60 * 30),
+            "exp": int(time.time()) + (60 * 300),
         }
         token = jwt.encode(claims, settings.JWT_KEY, algorithm="HS256")
         return token
