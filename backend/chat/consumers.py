@@ -250,6 +250,7 @@ class UserConsumer(AsyncWebsocketConsumer):
         sender = event['sender']
         recipient = event['recipient']
         room = event['room']
+        self.chats_data = []
         # chat_obj_all = await database_sync_to_async(Chat.objects.all)()
         chat_obj_all = await database_sync_to_async(
             # Chat.objects.select_related('room').all
@@ -266,26 +267,52 @@ class UserConsumer(AsyncWebsocketConsumer):
                 time = chat.timestamp
                 time = timezone.localtime(time)
                 time = time.strftime("%Y-%m-%d %H.%M.%S")
-                # print(f"{time}")
-                # print(f"owner_name: {self.owner_name}")
-                if self.owner_name == chat.sender:
-                    self.print_chat(f"{time}")
-                    self.print_chat(f"isSent: {True}")
-                    self.print_chat(f"{chat.sender}: {chat.content}\n")
-                else:
-                    print(f"{time}")
-                    print(f"isSent: {False}")
-                    print(f"{chat.sender}: {chat.content}\n")
+
+                # if self.owner_name == chat.sender:
+                #     self.print_chat(f"{time}")
+                #     self.print_chat(f"isSent: {True}")
+                #     self.print_chat(f"{chat.sender}: {chat.content}\n")
+                #     self.chats_data.append({
+                #         'date': time,
+                #         'isSent': chat.sender == sender,
+                #         'senderName': chat.sender,
+                #         'message': chat.content,
+                #     })
+                # else:
+                #     print(f"{time}")
+                #     print(f"isSent: {False}")
+                #     print(f"{chat.sender}: {chat.content}\n")
+                #     self.chats_data.append({
+                #         'date': time,
+                #         'isSent': chat.sender == sender,
+                #         'senderName': chat.sender,
+                #         'message': chat.content,
+                #     })
+                self.chats_data.append({
+                    'date': time,
+                    'isSent': chat.sender == sender,
+                    'senderName': chat.sender,
+                    'message': chat.content,
+                })
 
         # print(f"{sender} -> {recipient}: {message}")
         # print(f"{sender}: {message}")
+        self.print_chats_data()
 
         await self.send(text_data=json.dumps({
-            "message" : message,
-            "sender" : sender,
-            "recipient" : recipient,
+            # "message" : message,
+            # "sender" : sender,
+            # "recipient" : recipient,
+            "chats_data" : self.chats_data
         }))
 
     def print_chat(self, msg):
         format_str = " " * 50 + msg
         print(format_str)
+
+    def print_chats_data(self):
+        for chat in self.chats_data:
+            print(f"sender: {chat['senderName']}")
+            print(f"message: {chat['message']}")
+            print(f"date: {chat['date']}")
+            print(f"isSent: {chat['isSent']}\n")
