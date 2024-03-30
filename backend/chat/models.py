@@ -2,7 +2,8 @@ from django.db import models
 
 # Create your models here.
 from django.contrib.auth import get_user_model
-from django.utils import timezone
+# from django.utils import timezone
+from django.contrib.postgres.fields import ArrayField
 
 # Create your models here.
 User = get_user_model()
@@ -26,3 +27,26 @@ class Chat(models.Model):
 #Each Chat instance is associated with exactly one ChatRoom instance
 class ChatRoom(models.Model):
 	name = models.TextField()
+
+class BlockUser(models.Model):
+	own_user = models.ForeignKey('auth.User', on_delete=models.CASCADE, default=None)
+	own_name = models.TextField()
+	blocked_players = ArrayField(models.TextField(), default=list)
+
+	def block_user(self, blocked_playerName):
+		if blocked_playerName not in self.blocked_players:
+			self.blocked_players.append(blocked_playerName)
+			self.save()
+			return True
+		return False
+
+	def unblock_user(self, blocked_playerName):
+		if blocked_playerName in self.blocked_players:
+			self.blocked_players.remove(blocked_playerName)
+			self.save()
+			return True
+		return False
+
+	def is_blocked_user(self, blocked_playerName):
+		# Filter Chat instances associated with the user and have sender equal to playerName
+		return blocked_playerName in self.blocked_players

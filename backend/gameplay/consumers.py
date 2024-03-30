@@ -81,6 +81,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
+        self.player_user_map = {}
 
         if data["type"] == "client.register":
             if authorization := data.get("authorization"):
@@ -92,6 +93,10 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                 if not token or not token.is_token_valid():
                     return JsonResponse({"details": "Unauthorized"}, status=401)
                 self.player_id = await self.game.room.add_player(token.user)
+                # self.token_username = token.user.username
+                playerName = data.get("playerName")
+                self.player_user_map[playerName] = token.user.username
+                print(f"playerName: {playerName}, username: {self.player_user_map[playerName]}")
             elif name := data.get("playerName"):
                 self.player_id = await self.game.room.add_player_name(name)
             else:
@@ -117,6 +122,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                         "type": "roomDetails",
                         "roomCode": self.game_code,
                         "playerId": str(self.player_id),
+                        "player_user": token.user.username
                     }
                 )
             )
