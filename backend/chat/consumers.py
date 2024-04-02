@@ -14,7 +14,7 @@ from django.utils import timezone
 from .auth import check_authorization_header, check_jwt
 from .utils_models import get_blockUser_obj, get_user_obj
 from gameplay.consumers import GameplayConsumer as gameplay
-# from gameplay.models import PlayerUserMap as player_username
+from gameplay.models import PlayerUserMap
 from .utils_consumers import check_player_name, print_chats_data, get_owner_name
 
 User = get_user_model()
@@ -44,9 +44,6 @@ class UserConsumer(AsyncWebsocketConsumer):
         # await self.check_authorization_header()
         await check_authorization_header(self)
 
-        if self.user:
-            UserConsumer.active_consumers[self.user] = self.channel_name
-
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
         print(f"room_name is {self.room_name}")
 
@@ -68,7 +65,8 @@ class UserConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         #hasattr check if the self obj has the attribute room_group_name
         if hasattr(self, 'room_group_name'):
-            del UserConsumer.active_consumers[self.user]
+            if UserConsumer.active_consumers.get(self.user):
+                del UserConsumer.active_consumers[self.user]
             await self.channel_layer.group_discard(
                 self.room_group_name,
                 self.channel_name
@@ -79,7 +77,7 @@ class UserConsumer(AsyncWebsocketConsumer):
         req['block'] = {'sender', 'block_player', 'authorization', 'block'}
         req['unblock'] = {'sender', 'block_player', 'authorization', 'unblock'}
         req['msg'] = {'message', 'sender', 'recipient', 'authorization'}
-        req['invite'] = {'sender', 'sender_username', 'invite_user', 'invite_player', 'authorization'}
+        req['invite'] = {'sender', 'invite_player', 'authorization'}
         for k in self.data:
             if k not in req[req_name]:
                 return False
@@ -102,23 +100,27 @@ class UserConsumer(AsyncWebsocketConsumer):
                 pass
             elif authorization := self.data.get("authorization"):
                 self.user = await check_jwt(self, authorization)
-                if self.user:
-                    UserConsumer.active_consumers[self.user] = self.channel_name
             else:
                 print("Invalid authentication!!!")
                 await self.ft_send_err("disconnect", "Invalid registration. Closing connection.")
                 return
+
+            if (self.data.get("sender")):
+                sender = self.data.get("sender")
+                UserConsumer.active_consumers[sender] = self.channel_name
+                await PlayerUserMap.update_channel_name(sender, self.channel_name)
 
             print("Pass authentication!!!")
             if connect == self.data.get("authorization"):
                 print("Connection from browser")
                 return
 
+
             req_dict = {
                 'block' : self.group_send_block_req,
                 'unblock' : self.group_send_block_req,
                 'msg' : self.receive_msg,
-                'invite' : 'self.invite_user',
+                'invite' : self.invite_player,
                 # 'tournament' : 'tournament'
             }
             for req_type in req_dict:
@@ -178,6 +180,32 @@ class UserConsumer(AsyncWebsocketConsumer):
                 }))
         else:
             await self.ft_send_err("disconnect", "Invalid player name to block. Closing connection.")
+
+    async def invite_player(self):
+        invite_player = self.data.get('invite_player')
+        if not await self.get_username(invite_player):
+            await self.ft_send_err("disconnect", "Cannot invite invalid player. Closing connection.")
+            return
+        try:
+            await self.channel_layer.send(
+                await PlayerUserMap.get_channel_name(invite_player),  # Specify the channel name here
+                {
+                    "type": "send_invitation",
+                    "sender": self.data.get("sender"),
+                }
+            )
+        except Exception:
+            await self.ft_send_err("disconnect", f"Cannot send invitation to {invite_player}, maybe invalid channel name. Closing connection.")
+            return
+        await self.send(text_data=json.dumps({
+            "type": "success",
+            "details": f"Successfully send invitation to player name {invite_player}"
+        }))
+
+    async def send_invitation(self, event):
+        await self.send(text_data=json.dumps({
+            "invite" : event['sender']
+        }))
 
     async def receive_msg(self):
         print("In receive msg function")

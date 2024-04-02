@@ -194,6 +194,7 @@ class GameRoom(models.Model):
 class PlayerUserMap(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     playerName = models.TextField()
+    channel_name = models.TextField(null=True)
 
     @classmethod
     @sync_to_async
@@ -203,4 +204,23 @@ class PlayerUserMap(models.Model):
             return map.user.username
         except cls.DoesNotExist:
             return None
+
+    @classmethod
+    @sync_to_async
+    def get_channel_name(cls, playerName):
+        try:
+            obj = cls.objects.get(playerName=playerName)
+            return obj.channel_name
+        except cls.DoesNotExist:
+            return None
+
+    @classmethod
+    @sync_to_async
+    def update_channel_name(cls, playerName, channel_name):
+        try:
+            player_user_map = cls.objects.get(playerName=playerName)
+            player_user_map.channel_name = channel_name
+            player_user_map.save()
+        except cls.DoesNotExist:
+            pass
 
