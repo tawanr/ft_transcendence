@@ -8,9 +8,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.http import JsonResponse
 
 import gameplay.constants as constants
-from gameplay.models import GameRoom
+from gameplay.models import GameRoom, GamePlayer, PlayerUserMap
 from gameplay.states import BallState, GameState, PlayerState
-
 
 class GameplayConsumer(AsyncWebsocketConsumer):
     game_group_name: str = "game_group"
@@ -81,7 +80,6 @@ class GameplayConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        self.player_user_map = {}
 
         if data["type"] == "client.register":
             if authorization := data.get("authorization"):
@@ -93,10 +91,10 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                 if not token or not token.is_token_valid():
                     return JsonResponse({"details": "Unauthorized"}, status=401)
                 self.player_id = await self.game.room.add_player(token.user)
-                # self.token_username = token.user.username
                 playerName = data.get("playerName")
-                self.player_user_map[playerName] = token.user.username
-                print(f"playerName: {playerName}, username: {self.player_user_map[playerName]}")
+                if not await self.get_username(playerName):
+                    await self.map_player_user(token.user, playerName)
+                self.player_name = playerName
             elif name := data.get("playerName"):
                 self.player_id = await self.game.room.add_player_name(name)
             else:
@@ -258,3 +256,12 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             await self.send_group()
             await asyncio.sleep(0.03)
         print("\nGame ended.\n")
+
+    async def get_username(self, playerName):
+        return await PlayerUserMap.get_username(playerName)
+
+    async def map_player_user(self, user, playerName):
+        await PlayerUserMap.objects.acreate(
+            user = user,
+            playerName = playerName
+        )

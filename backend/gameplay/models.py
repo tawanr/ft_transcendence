@@ -3,6 +3,10 @@ import string
 import uuid
 
 from django.db import models
+from django.contrib.auth import get_user_model
+from asgiref.sync import sync_to_async
+
+User = get_user_model()
 
 
 class TournamentPlayer(models.Model):
@@ -186,3 +190,17 @@ class GameRoom(models.Model):
             .filter(player=user, is_winner=True)
             .exists()
         )
+
+class PlayerUserMap(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    playerName = models.TextField()
+
+    @classmethod
+    @sync_to_async
+    def get_username(cls, playerName):
+        try:
+            map = cls.objects.get(playerName=playerName)
+            return map.user.username
+        except cls.DoesNotExist:
+            return None
+
