@@ -73,17 +73,25 @@ class UserConsumer(AsyncWebsocketConsumer):
             )
 
     def is_check_req(self, req_name):
+        print("In check request")
         req = {}
         req['block'] = {'sender', 'block_player', 'authorization', 'block'}
         req['unblock'] = {'sender', 'block_player', 'authorization', 'unblock'}
         req['msg'] = {'message', 'sender', 'recipient', 'authorization'}
-        req['invite'] = {'sender', 'invite_player', 'authorization'}
-        for k in self.data:
-            if k not in req[req_name]:
-                return False
-        if req_name == 'block' or req_name == 'unblock':
-            self.data['status'] = 'block' if req_name == 'block' else 'unblock'
-        return True
+        req['invite'] = {'sender', 'recipient', 'authorization', 'invitation'}
+        # for k in self.data:
+        #     if k not in req[req_name]:
+        #         return False
+        # if req_name == 'block' or req_name == 'unblock':
+        #     self.data['status'] = 'block' if req_name == 'block' else 'unblock'
+        # return True
+
+        data = set(self.data.keys())
+        if data == req[req_name]:
+            if req_name == 'block' or req_name == 'unblock':
+                self.data['status'] = 'block' if req_name == 'block' else 'unblock'
+            return True
+        return False
 
     async def receive(self, text_data):
         print("\nIn receive function!!!")
@@ -182,30 +190,34 @@ class UserConsumer(AsyncWebsocketConsumer):
             await self.ft_send_err("disconnect", "Invalid player name to block. Closing connection.")
 
     async def invite_player(self):
-        invite_player = self.data.get('invite_player')
+        print("In invite player function")
+        invite_player = self.data.get('recipient')
         if not await self.get_username(invite_player):
             await self.ft_send_err("disconnect", "Cannot invite invalid player. Closing connection.")
             return
-        try:
-            await self.channel_layer.send(
-                await PlayerUserMap.get_channel_name(invite_player),  # Specify the channel name here
-                {
-                    "type": "send_invitation",
-                    "sender": self.data.get("sender"),
-                }
-            )
-        except Exception:
-            await self.ft_send_err("disconnect", f"Cannot send invitation to {invite_player}, maybe invalid channel name. Closing connection.")
-            return
+        # try:
+        #     await self.channel_layer.send(
+        #         await PlayerUserMap.get_channel_name(invite_player),  # Specify the channel name here
+        #         {
+        #             "type": "send_invitation",
+        #             "sender": self.data.get("sender"),
+        #         }
+        #     )
+        # except Exception:
+        #     await self.ft_send_err("disconnect", f"Cannot send invitation to {invite_player}, maybe invalid channel name. Closing connection.")
+        #     return
+        self.data['message'] = f"{self.data.get('sender')} invite you to play pong game"
+        self.data['msg_type'] = "invitation"
+        await self.receive_msg()
         await self.send(text_data=json.dumps({
             "type": "success",
             "details": f"Successfully send invitation to player name {invite_player}"
         }))
 
-    async def send_invitation(self, event):
-        await self.send(text_data=json.dumps({
-            "invite" : event['sender']
-        }))
+    # async def send_invitation(self, event):
+    #     await self.send(text_data=json.dumps({
+    #         "invite" : event['sender']
+    #     }))
 
     async def receive_msg(self):
         print("In receive msg function")
@@ -228,7 +240,8 @@ class UserConsumer(AsyncWebsocketConsumer):
         sender_block_obj = await get_blockUser_obj(sender_obj, self.sender)
         recipient_block_obj = await get_blockUser_obj(recipient_obj, self.recipient)
 
-        await self.save_massage(sender_obj, self.sender, message, room)
+        if self.data.get('msg_type') != "invitation":
+            await self.save_massage(sender_obj, self.sender, message, room)
         if not await db_s2as(recipient_block_obj.is_blocked_user)(self.sender) and not await db_s2as(sender_block_obj.is_blocked_user)(self.recipient):
             print("Not block!!!")
             await self.save_massage(recipient_obj, self.sender, message, room)
