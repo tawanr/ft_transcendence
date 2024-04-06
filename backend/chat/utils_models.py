@@ -13,13 +13,13 @@ async def get_user_obj(self, username):
 		raise self.CustomException("Invalid username", username)
 		# return None  # Return None if the user doesn't exist
 
-async def get_blockUser_obj(user, playerName):
+async def get_blockUser_obj(user, username):
 	sender_block_obj, _ = await db_s2as(BlockUser.objects.get_or_create)(
 		own_user=user,
-		own_name=playerName,
+		own_username=username,
 		defaults={
 			"own_user": user,
-			"own_name": playerName
+			"own_username": username
 		}  # Defaults to use if the object is created
 	)
 	return sender_block_obj

@@ -1,33 +1,20 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-# from django.contrib.auth.models import User
 import json
 from channels.db import database_sync_to_async as db_s2as
 from django.utils.html import escape
-# from django.urls import reverse
-# import jwt
-# from django.conf import settings
-# from account.models import UserToken
 from django.http import JsonResponse
 from .models import ChatRoom, Chat
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from .auth import check_authorization_header, check_jwt
 from .utils_models import get_blockUser_obj, get_user_obj
-from gameplay.consumers import GameplayConsumer as gameplay
 from gameplay.models import PlayerUserMap
-from .utils_consumers import check_player_name, print_chats_data, get_owner_name
+from .utils_consumers import print_chats_data
 
 User = get_user_model()
 
 class UserConsumer(AsyncWebsocketConsumer):
     active_consumers = {}
-
-    async def get_username(self, playerName):
-        username = await gameplay.get_username(gameplay, playerName)
-        if not username:
-            await self.ft_send_err("disconnect", f"Invalid player name {playerName}, cannot get username. Closing connection.")
-            raise self.CustomException("")
-        return username
 
     async def ft_send_err(self, type, details):
         await self.send(text_data=json.dumps({
@@ -73,18 +60,11 @@ class UserConsumer(AsyncWebsocketConsumer):
             )
 
     def is_check_req(self, req_name):
-        print("In check request")
         req = {}
-        req['block'] = {'sender', 'block_player', 'authorization', 'block'}
-        req['unblock'] = {'sender', 'block_player', 'authorization', 'unblock'}
+        req['block'] = {'sender', 'recipient', 'authorization', 'block'}
+        req['unblock'] = {'sender', 'recipient', 'authorization', 'unblock'}
         req['msg'] = {'message', 'sender', 'recipient', 'authorization'}
         req['invite'] = {'sender', 'recipient', 'authorization', 'invitation'}
-        # for k in self.data:
-        #     if k not in req[req_name]:
-        #         return False
-        # if req_name == 'block' or req_name == 'unblock':
-        #     self.data['status'] = 'block' if req_name == 'block' else 'unblock'
-        # return True
 
         data = set(self.data.keys())
         if data == req[req_name]:
@@ -151,7 +131,7 @@ class UserConsumer(AsyncWebsocketConsumer):
             {
                 "type" : "block_player",
                 "sender": self.data.get("sender"),
-                "block_player" : self.data.get("block_player"),
+                "recipient" : self.data.get("recipient"),
                 "channel_name" : self.channel_name,
                 "status" : self.data.get("status")
             }
@@ -160,11 +140,13 @@ class UserConsumer(AsyncWebsocketConsumer):
     async def block_player(self, event):
         print("In block user function!!!")
 
-        sender_user_obj = await get_user_obj(self, await self.get_username(event['sender']))
+        sender_user_obj = await get_user_obj(self, event['sender'])
         sender_block_obj = await get_blockUser_obj(sender_user_obj, event['sender'])
-        player_to_block = event['block_player']
+        player_to_block = event['recipient']
+        player_to_block_obj = await get_user_obj(self, player_to_block)
+        player_to_block_username = player_to_block_obj.username
 
-        if await self.get_username(event['block_player']) == self.user:
+        if player_to_block_username == self.user:
             await self.ft_send_err("disconnect", "Cannot block their own user. Closing connection.")
             return
         if player_to_block:
@@ -191,43 +173,21 @@ class UserConsumer(AsyncWebsocketConsumer):
 
     async def invite_player(self):
         print("In invite player function")
-        invite_player = self.data.get('recipient')
-        if not await self.get_username(invite_player):
-            await self.ft_send_err("disconnect", "Cannot invite invalid player. Closing connection.")
-            return
-        # try:
-        #     await self.channel_layer.send(
-        #         await PlayerUserMap.get_channel_name(invite_player),  # Specify the channel name here
-        #         {
-        #             "type": "send_invitation",
-        #             "sender": self.data.get("sender"),
-        #         }
-        #     )
-        # except Exception:
-        #     await self.ft_send_err("disconnect", f"Cannot send invitation to {invite_player}, maybe invalid channel name. Closing connection.")
-        #     return
         self.data['message'] = f"{self.data.get('sender')} invite you to play pong game"
         self.data['msg_type'] = "invitation"
         await self.receive_msg()
         await self.send(text_data=json.dumps({
             "type": "success",
-            "details": f"Successfully send invitation to player name {invite_player}"
+            "details": f"Successfully send invitation to player name {self.data.get('recipient')}"
         }))
-
-    # async def send_invitation(self, event):
-    #     await self.send(text_data=json.dumps({
-    #         "invite" : event['sender']
-    #     }))
 
     async def receive_msg(self):
         print("In receive msg function")
         message = escape(self.data['message'])
         self.sender = self.data['sender']
         self.recipient = self.data['recipient']
-        sender_username = await self.get_username(self.sender)
-        recipient_username = await self.get_username(self.recipient)
-        self.owner_name = get_owner_name(self, sender_username)
-        await check_player_name(self, self.sender, self.recipient)
+        sender_username = self.data['sender']
+        recipient_username = self.data['recipient']
 
         #Find room obj
         room, _ = await db_s2as(ChatRoom.objects.get_or_create)(
@@ -244,6 +204,8 @@ class UserConsumer(AsyncWebsocketConsumer):
             await self.save_massage(sender_obj, self.sender, message, room)
         if not await db_s2as(recipient_block_obj.is_blocked_user)(self.sender) and not await db_s2as(sender_block_obj.is_blocked_user)(self.recipient):
             print("Not block!!!")
+            print(f"msg is {message}")
+            print(f"recipient is {recipient_username}")
             await self.save_massage(recipient_obj, self.sender, message, room)
         else:
             print("Block!!!!!!!")
@@ -267,6 +229,9 @@ class UserConsumer(AsyncWebsocketConsumer):
         chat_obj_all = await db_s2as(
             Chat.objects.select_related('room', 'user').order_by('timestamp').all
         )()
+        print("In chat_msg function")
+        print(f"recipient {recipient}")
+        print(f"room {room}")
 
         async for chat in chat_obj_all:
             if (chat.room.name == room and chat.user.username == self.user):

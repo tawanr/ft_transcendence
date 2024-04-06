@@ -30,23 +30,23 @@ class ChatRoom(models.Model):
 
 class BlockUser(models.Model):
 	own_user = models.ForeignKey('auth.User', on_delete=models.CASCADE, default=None)
-	own_name = models.TextField()
-	blocked_players = ArrayField(models.TextField(), default=list)
+	own_username = models.TextField()
+	blocked_users = ArrayField(models.TextField(), default=list)
 
-	def block_user(self, blocked_playerName):
-		if blocked_playerName not in self.blocked_players:
-			self.blocked_players.append(blocked_playerName)
+	def block_user(self, blocked_username):
+		if blocked_username not in self.blocked_users:
+			self.blocked_users.append(blocked_username)
 			self.save()
 			return True
 		return False
 
-	def unblock_user(self, blocked_playerName):
-		if blocked_playerName in self.blocked_players:
-			self.blocked_players.remove(blocked_playerName)
+	def unblock_user(self, blocked_username):
+		if blocked_username in self.blocked_users:
+			self.blocked_users.remove(blocked_username)
 			self.save()
 			return True
 		return False
 
-	def is_blocked_user(self, blocked_playerName):
+	def is_blocked_user(self, blocked_username):
 		# Filter Chat instances associated with the user and have sender equal to playerName
-		return blocked_playerName in self.blocked_players
+		return blocked_username in self.blocked_users

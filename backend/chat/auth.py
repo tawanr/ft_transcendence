@@ -19,7 +19,6 @@ async def check_authorization_header(self):
 			break
 	if authFlag is False:
 		return
-	print("authFlag is True")
 	#Split value of Authorization header by space Bearer and token part
 	#_ is placeholder for Bearer => not use anymore so discard it
 	#jwt_token for token part
