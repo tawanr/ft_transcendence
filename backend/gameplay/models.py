@@ -1,6 +1,7 @@
 import random
 import string
 import uuid
+import asyncio
 
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -52,6 +53,8 @@ class GamePlayer(models.Model):
     name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=False)
     is_winner = models.BooleanField(default=False)
+    win = models.PositiveIntegerField(default=0)
+    loss = models.PositiveIntegerField(default=0)
     score = models.IntegerField(default=0)
     session_id = models.UUIDField(default=uuid.uuid4)
     player_number = models.IntegerField(default=1)
@@ -144,14 +147,32 @@ class GameRoom(models.Model):
         await self.asave()
 
     async def force_end(self, player_id):
+        # print("In force_end")
+        if not player_id:
+            print("Invalid player_id")
+            return
         self.is_active = False
         self.is_finished = True
+        # print(f"player_id: {player_id}")
         await (
             GamePlayer.objects.filter(game_room=self)
             .exclude(session_id=player_id)
             .aupdate(is_winner=True)
         )
         await self.asave()
+
+        test_obj = await sync_to_async(GamePlayer.objects.filter(game_room=self).count)()
+        if test_obj <= 1:
+            return
+        async for gp_obj in GamePlayer.objects.filter(game_room=self).select_related('player'):
+            # player_username = gp_obj.player.username if gp_obj.player else 'Anonymous'
+            # print(f"Player username: {player_username}")
+            # print(f"In for loop to update win, loss, is_win: {gp_obj.is_winner}")
+            if gp_obj.is_winner is True:
+                gp_obj.win += 1
+            else:
+                gp_obj.loss += 1
+            await gp_obj.asave()
 
     async def victory(self, player_id):
         self.is_active = False
@@ -162,6 +183,21 @@ class GameRoom(models.Model):
             .aupdate(is_winner=True)
         )
         await self.asave()
+
+    async def test_user_record(self, user, player_id):
+        print("In test_user_record")
+        await self.force_end(player_id)
+        print("after force_end")
+        win = 0
+        loss = 0
+
+        async for gp_obj in GamePlayer.objects.filter(player=user):
+            print(f"In for loop to update win, loss, is_win: {gp_obj.is_winner}")
+            win += gp_obj.win
+            loss += gp_obj.loss
+            await gp_obj.asave()
+
+        print(f"username: {user.username}, win: {win}, loss: {loss}")
 
     def get_player_by_num(self, player_number) -> GamePlayer:
         return GamePlayer.objects.filter(
@@ -191,36 +227,86 @@ class GameRoom(models.Model):
             .exists()
         )
 
-class PlayerUserMap(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    playerName = models.TextField()
-    channel_name = models.TextField(null=True)
+# class UserRecord(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     game_room = models.ForeignKey("GameRoom", on_delete=models.CASCADE, null=True, default=None)
+#     player_id = models.UUIDField(default=uuid.uuid4)
+#     win = models.PositiveIntegerField(default=0)
+#     loss = models.PositiveIntegerField(default=0)
 
-    @classmethod
-    @sync_to_async
-    def get_username(cls, playerName):
-        try:
-            map = cls.objects.get(playerName=playerName)
-            return map.user.username
-        except cls.DoesNotExist:
-            return None
+#     @classmethod
+#     @sync_to_async
+#     def record_result(cls, user, is_winner):
+#         user_record, _ = cls.objects.get_or_create(user)
+#         if is_winner:
+#             user_record.win += 1
+#         else:
+#             user_record.loss += 1
+#         user_record.save()
 
-    @classmethod
-    @sync_to_async
-    def get_channel_name(cls, playerName):
-        try:
-            obj = cls.objects.get(playerName=playerName)
-            return obj.channel_name
-        except cls.DoesNotExist:
-            return None
+#     @classmethod
+#     @sync_to_async
+#     def create_user_record(cls, user, game_room, player_id):
+#         user_record,_ = cls.objects.get_or_create(user=user, game_room=game_room, player_id=player_id)
+#         return user_record
 
-    @classmethod
-    @sync_to_async
-    def update_channel_name(cls, playerName, channel_name):
-        try:
-            player_user_map = cls.objects.get(playerName=playerName)
-            player_user_map.channel_name = channel_name
-            player_user_map.save()
-        except cls.DoesNotExist:
-            pass
+#     @classmethod
+#     async def test_user_record(cls, user, game_room, player_id):
+#         await game_room.force_end(player_id)
+#         user_records_queryset = await sync_to_async(UserRecord.objects.filter)(user=user)
+#         # user = user_records_queryset.select_related('user')
+#         user_records = await sync_to_async(list)(user_records_queryset)
+#         win = 0
+#         loss = 0
+#         for obj in user_records:
+#             win += obj.win
+#             loss += obj.loss
+#         print(f"username: {user.username}, win: {win}, loss: {loss}")
 
+#         print("Dummy")
+#         game_player_queryset = await sync_to_async(GamePlayer.objects.filter)(player=user)
+#         game_player_queryset = game_player_queryset.select_related('player')
+#         game_players = await sync_to_async(list)(game_player_queryset)
+#         win = 0
+#         loss = 0
+#         for obj in game_players:
+#             if obj.player == user:
+#                 print("player == user")
+#                 if obj.is_winner is True:
+#                     win += 1
+#                 elif obj.is_winner is False:
+#                     loss += 1
+#         print(f"user: {user.username}, win: {win}, loss: {loss}")
+
+# class PlayerUserMap(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     playerName = models.TextField()
+#     channel_name = models.TextField(null=True)
+
+#     @classmethod
+#     @sync_to_async
+#     def get_username(cls, playerName):
+#         try:
+#             map = cls.objects.get(playerName=playerName)
+#             return map.user.username
+#         except cls.DoesNotExist:
+#             return None
+
+#     @classmethod
+#     @sync_to_async
+#     def get_channel_name(cls, playerName):
+#         try:
+#             obj = cls.objects.get(playerName=playerName)
+#             return obj.channel_name
+#         except cls.DoesNotExist:
+#             return None
+
+#     @classmethod
+#     @sync_to_async
+#     def update_channel_name(cls, playerName, channel_name):
+#         try:
+#             player_user_map = cls.objects.get(playerName=playerName)
+#             player_user_map.channel_name = channel_name
+#             player_user_map.save()
+#         except cls.DoesNotExist:
+#             pass

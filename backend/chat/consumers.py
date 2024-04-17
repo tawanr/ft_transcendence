@@ -8,7 +8,6 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from .auth import check_authorization_header, check_jwt
 from .utils_models import get_blockUser_obj, get_user_obj
-from gameplay.models import PlayerUserMap
 from .utils_consumers import print_chats_data
 
 User = get_user_model()
@@ -65,6 +64,7 @@ class UserConsumer(AsyncWebsocketConsumer):
         req['unblock'] = {'sender', 'recipient', 'authorization', 'unblock'}
         req['msg'] = {'message', 'sender', 'recipient', 'authorization'}
         req['invite'] = {'sender', 'recipient', 'authorization', 'invitation'}
+        req['profile'] = {'sender', 'recipient', 'authorization', 'profile'}
 
         data = set(self.data.keys())
         if data == req[req_name]:
@@ -96,7 +96,6 @@ class UserConsumer(AsyncWebsocketConsumer):
             if (self.data.get("sender")):
                 sender = self.data.get("sender")
                 UserConsumer.active_consumers[sender] = self.channel_name
-                await PlayerUserMap.update_channel_name(sender, self.channel_name)
 
             print("Pass authentication!!!")
             if connect == self.data.get("authorization"):
@@ -109,6 +108,7 @@ class UserConsumer(AsyncWebsocketConsumer):
                 'unblock' : self.group_send_block_req,
                 'msg' : self.receive_msg,
                 'invite' : self.invite_player,
+                'profile' : self.group_see_profile_req,
                 # 'tournament' : 'tournament'
             }
             for req_type in req_dict:
@@ -180,6 +180,26 @@ class UserConsumer(AsyncWebsocketConsumer):
             "type": "success",
             "details": f"Successfully send invitation to player name {self.data.get('recipient')}"
         }))
+
+    async def group_see_profile_req(self):
+        print("In group_see_profile_req!!!")
+        sender = self.data['sender']
+        recipient = self.data['recipient']
+        sender_obj = await get_user_obj(self, sender)
+        recipient_obj = await get_user_obj(self, recipient)
+        
+        # await self.channel_layer.group_send(
+        #     self.room_group_name,
+        #     {
+        #         "sender" : sender
+        #     }
+        # )
+        await self.send(text_data=json.dumps({
+            "type": "success",
+            "details": f"Successfully see profile of {recipient}"
+        }))
+
+
 
     async def receive_msg(self):
         print("In receive msg function")

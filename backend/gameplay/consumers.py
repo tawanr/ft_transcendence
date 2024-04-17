@@ -6,9 +6,10 @@ from uuid import uuid4
 from account.models import UserToken
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.http import JsonResponse
+from asgiref.sync import sync_to_async as s2as
 
 import gameplay.constants as constants
-from gameplay.models import GameRoom, GamePlayer, PlayerUserMap
+from gameplay.models import GameRoom, GamePlayer
 from gameplay.states import BallState, GameState, PlayerState
 
 class GameplayConsumer(AsyncWebsocketConsumer):
@@ -30,6 +31,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             ).afirst()
 
         if not game_code or not game_room:
+            print("Cannot find game_code, create new one")
             game_room = await GameRoom.objects.acreate()
 
         await self.game.reset_states()
@@ -37,6 +39,10 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         self.game.room = game_room
         self.game_code = game_room.game_code
         self.game_group_name = f"game_{self.game_code}"
+
+        # self.dummy = ""
+
+        print(f"game_group_name: {self.game_group_name}")
 
         asyncio.create_task(self.check_registered())
 
@@ -91,10 +97,15 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                 if not token or not token.is_token_valid():
                     return JsonResponse({"details": "Unauthorized"}, status=401)
                 self.player_id = await self.game.room.add_player(token.user)
-                playerName = data.get("playerName")
-                if not await self.get_username(playerName):
-                    await self.map_player_user(token.user, playerName)
-                self.player_name = playerName
+                #################################################################
+                # if not self.dummy:
+                #     self.dummy = self.player_id
+                # if data.get('test'):
+                #     print("In test condition")
+                #     self.player_id = self.dummy
+                #     print(f"Before get in test_user_record player_id: {self.player_id}")
+                #     await self.game.room.test_user_record(token.user, self.player_id)
+                #################################################################
             elif name := data.get("playerName"):
                 self.player_id = await self.game.room.add_player_name(name)
             else:
@@ -257,11 +268,22 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             await asyncio.sleep(0.03)
         print("\nGame ended.\n")
 
-    async def get_username(self, playerName):
-        return await PlayerUserMap.get_username(playerName)
+    # async def get_username(self, playerName):
+    #     return await PlayerUserMap.get_username(playerName)
 
-    async def map_player_user(self, user, playerName):
-        await PlayerUserMap.objects.acreate(
-            user = user,
-            playerName = playerName
-        )
+    # async def map_player_user(self, user, playerName):
+    #     await PlayerUserMap.objects.acreate(
+    #         user = user,
+    #         playerName = playerName
+    #     )
+
+    # async def test_user_record(self, player_id):
+    #     await self.game.room.force_end(player_id)
+    #     # user_records = await UserRecord.objects.filter(game_code=self.game.room.game_code).all()
+    #     user_records_queryset = await s2as(UserRecord.objects.filter)(game_code=self.game.room.game_code)
+    #     user_records = await s2as(list)(user_records_queryset)
+    #     for user_obj in user_records:
+    #         # user = await s2as(user_obj.user)()
+    #         # user = await s2as(user_obj.user)
+    #         # print(f"user: {user.username}, win: {user_obj.win}, loss: {user_obj.loss}")
+    #         print(f"win: {user_obj.win}, loss: {user_obj.loss}")
