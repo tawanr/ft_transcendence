@@ -40,7 +40,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         self.game_code = game_room.game_code
         self.game_group_name = f"game_{self.game_code}"
 
-        # self.dummy = ""
+        self.dummy = ""
 
         print(f"game_group_name: {self.game_group_name}")
 
