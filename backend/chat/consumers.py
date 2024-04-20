@@ -9,6 +9,7 @@ from django.utils import timezone
 from .auth import check_authorization_header, check_jwt
 from .utils_models import get_blockUser_obj, get_user_obj
 from .utils_consumers import print_chats_data
+from gameplay.models import GamePlayer as gp
 
 User = get_user_model()
 
@@ -185,21 +186,32 @@ class UserConsumer(AsyncWebsocketConsumer):
         print("In group_see_profile_req!!!")
         sender = self.data['sender']
         recipient = self.data['recipient']
-        sender_obj = await get_user_obj(self, sender)
-        recipient_obj = await get_user_obj(self, recipient)
-        
-        # await self.channel_layer.group_send(
-        #     self.room_group_name,
-        #     {
-        #         "sender" : sender
-        #     }
-        # )
+
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type" : "see_profile",
+                "sender" : sender,
+                "recipient" : recipient,
+            }
+        )
         await self.send(text_data=json.dumps({
             "type": "success",
             "details": f"Successfully see profile of {recipient}"
         }))
 
+    async def see_profile(self, event):
+        recipient_obj = await get_user_obj(self, event
+        ['recipient'])
+        win = await gp.get_win(gp, recipient_obj)
+        loss = await gp.get_loss(gp, recipient_obj)
 
+        await self.send(text_data=json.dumps({
+            "sender": event['sender'],
+            "recipient": event['recipient'],
+            "win" : win,
+            "loss" : loss
+        }))
 
     async def receive_msg(self):
         print("In receive msg function")

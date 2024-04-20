@@ -69,6 +69,17 @@ class GamePlayer(models.Model):
                 name="Player number unique in room",
             ),
         ]
+    async def get_win(self, user):
+        win = 0
+        async for gp_obj in GamePlayer.objects.filter(player=user):
+            win += gp_obj.win
+        return win
+
+    async def get_loss(self, user):
+        loss = 0
+        async for gp_obj in GamePlayer.objects.filter(player=user):
+            loss += gp_obj.loss
+        return loss
 
 
 class GameRoom(models.Model):
@@ -148,9 +159,6 @@ class GameRoom(models.Model):
 
     async def update_win_loss(self, game_room):
         async for gp_obj in GamePlayer.objects.filter(game_room=game_room).select_related('player'):
-            # player_username = gp_obj.player.username if gp_obj.player else 'Anonymous'
-            # print(f"Player username: {player_username}")
-            # print(f"In for loop to update win, loss, is_win: {gp_obj.is_winner}")
             if gp_obj.is_winner is True:
                 gp_obj.win += 1
             else:
@@ -187,20 +195,17 @@ class GameRoom(models.Model):
         await self.update_win_loss(self)
 
     async def test_user_record(self, user, player_id):
-        # print("In test_user_record")
-        # await self.force_end(player_id)
         await self.victory(player_id)
-        # print("after victory")
         win = 0
         loss = 0
 
         async for gp_obj in GamePlayer.objects.filter(player=user):
-            # print(f"In for loop to update win, loss, is_win: {gp_obj.is_winner}")
+            print(f"In for loop to update win, loss, is_win: {gp_obj.is_winner}")
             win += gp_obj.win
             loss += gp_obj.loss
             await gp_obj.asave()
 
-        # print(f"username: {user.username}, win: {win}, loss: {loss}")
+        print(f"username: {user.username}, win: {win}, loss: {loss}")
 
     def get_player_by_num(self, player_number) -> GamePlayer:
         return GamePlayer.objects.filter(
