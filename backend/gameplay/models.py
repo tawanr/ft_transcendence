@@ -158,13 +158,11 @@ class GameRoom(models.Model):
             await gp_obj.asave()
 
     async def force_end(self, player_id):
-        # print("In force_end")
         if not player_id:
             print("Invalid player_id")
             return
         self.is_active = False
         self.is_finished = True
-        # print(f"player_id: {player_id}")
         await (
             GamePlayer.objects.filter(game_room=self)
             .exclude(session_id=player_id)
@@ -186,21 +184,23 @@ class GameRoom(models.Model):
             .aupdate(is_winner=True)
         )
         await self.asave()
+        await self.update_win_loss(self)
 
     async def test_user_record(self, user, player_id):
-        print("In test_user_record")
-        await self.force_end(player_id)
-        print("after force_end")
+        # print("In test_user_record")
+        # await self.force_end(player_id)
+        await self.victory(player_id)
+        # print("after victory")
         win = 0
         loss = 0
 
         async for gp_obj in GamePlayer.objects.filter(player=user):
-            print(f"In for loop to update win, loss, is_win: {gp_obj.is_winner}")
+            # print(f"In for loop to update win, loss, is_win: {gp_obj.is_winner}")
             win += gp_obj.win
             loss += gp_obj.loss
             await gp_obj.asave()
 
-        print(f"username: {user.username}, win: {win}, loss: {loss}")
+        # print(f"username: {user.username}, win: {win}, loss: {loss}")
 
     def get_player_by_num(self, player_number) -> GamePlayer:
         return GamePlayer.objects.filter(
