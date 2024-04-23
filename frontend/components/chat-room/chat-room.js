@@ -1,35 +1,13 @@
 import { fetchHTML } from "../../js/utils.js";
-import * as constants from "../../js/constants.js";
 
 class ChatRoom extends HTMLElement {
     constructor() {
         super();
-        //Create shadow DOM for ChatRoom element
-        //closed => not accessible from JS outside of the ChatRoom
         this.shadow = this.attachShadow({ mode: "closed" });
         fetchHTML("/components/chat-room/chat-room.html").then((html) => {
             this.html = html;
             this.render();
         });
-
-        this.senderDummy = "Player1"
-        this.connectRoom()
-        this.chatSocket.onmessage = function (e) {
-            const data = JSON.parse(e.data)
-            console.log("Test log from onmessage")
-            console.log(data)
-            console.log(data.message)
-            console.log(data.sender)
-            console.log(data.recipient)
-            this.chats = [
-                {
-                    senderName: "abc",
-                    message: "hello",
-                    date: "2021-07-01",
-                    isSent: false,
-                },
-            ];
-        }
         this.chats = [
             {
                 senderName: "abc",
@@ -121,35 +99,8 @@ class ChatRoom extends HTMLElement {
                 date: "2021-07-03",
                 isSent: true,
             },
-            {
-                senderName: "xxx",
-                message: "wanna play?",
-                date: "2021-07-02",
-                isSent: false,
-            },
         ];
         this.groupChat = this.hasAttribute("group-chat");
-    }
-
-    //connect to the chat socket
-    connectRoom() {
-        let playerName = ["Player55", "Player2"];
-        playerName.sort();
-        const roomName = `room_${playerName[0]}_${playerName[1]}`;
-        let api_url = constants.BACKEND_SOCKET_HOST + constants.BACKEND_CHATSOCKET_API + roomName;
-        this.chatSocket = new WebSocket(api_url);
-        this.chatSocket.onopen = () => {
-            let auth = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsIm5hbWUiOiJ0ZXN0X3VzZXI1NSIsImlhdCI6MTcxMDUzNDEzOSwiZXhwIjoxNzEwNTM1OTM5fQ.H8BwZtgRy1sjRnKHML8uVgLNWPQvXjD0DIG_jGt8ykc" || null
-            // let auth = localStorage.getItem("token") || null
-            let connect = auth
-            this.chatSocket.send(
-                JSON.stringify({
-                    // authorization: localStorage.getItem("token") || null,
-                    authorization: auth,
-                    connect: connect
-                })
-            );
-        }
     }
 
     connectedCallback() {}

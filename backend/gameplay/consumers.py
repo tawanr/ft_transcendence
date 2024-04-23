@@ -40,7 +40,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         self.game_code = game_room.game_code
         self.game_group_name = f"game_{self.game_code}"
 
-        # self.dummy = ""
+        self.dummy = ""
 
         print(f"game_group_name: {self.game_group_name}")
 
@@ -98,6 +98,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                     return JsonResponse({"details": "Unauthorized"}, status=401)
                 self.player_id = await self.game.room.add_player(token.user)
                 #################################################################
+                # print(f"username: {token.user.username}")
                 # if not self.dummy:
                 #     self.dummy = self.player_id
                 # if data.get('test'):
@@ -140,6 +141,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             await self.send_group()
 
         if not self.player_id:
+            print(f"player_id: {self.player_id}")
             return
 
         message = {
@@ -267,23 +269,3 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             await self.send_group()
             await asyncio.sleep(0.03)
         print("\nGame ended.\n")
-
-    # async def get_username(self, playerName):
-    #     return await PlayerUserMap.get_username(playerName)
-
-    # async def map_player_user(self, user, playerName):
-    #     await PlayerUserMap.objects.acreate(
-    #         user = user,
-    #         playerName = playerName
-    #     )
-
-    # async def test_user_record(self, player_id):
-    #     await self.game.room.force_end(player_id)
-    #     # user_records = await UserRecord.objects.filter(game_code=self.game.room.game_code).all()
-    #     user_records_queryset = await s2as(UserRecord.objects.filter)(game_code=self.game.room.game_code)
-    #     user_records = await s2as(list)(user_records_queryset)
-    #     for user_obj in user_records:
-    #         # user = await s2as(user_obj.user)()
-    #         # user = await s2as(user_obj.user)
-    #         # print(f"user: {user.username}, win: {user_obj.win}, loss: {user_obj.loss}")
-    #         print(f"win: {user_obj.win}, loss: {user_obj.loss}")

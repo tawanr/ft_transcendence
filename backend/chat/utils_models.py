@@ -23,3 +23,6 @@ async def get_blockUser_obj(user, username):
 		}  # Defaults to use if the object is created
 	)
 	return sender_block_obj
+
+def get_avatar_url(user):
+    return user.details.avatar.url if user.details.avatar else ""

@@ -7,9 +7,9 @@ from .models import ChatRoom, Chat
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from .auth import check_authorization_header, check_jwt
-from .utils_models import get_blockUser_obj, get_user_obj
+from .utils_models import get_blockUser_obj, get_user_obj, get_avatar_url
 from .utils_consumers import print_chats_data
-from gameplay.models import GamePlayer as gp
+# from gameplay.models import GamePlayer as gp
 
 User = get_user_model()
 
@@ -203,14 +203,20 @@ class UserConsumer(AsyncWebsocketConsumer):
     async def see_profile(self, event):
         recipient_obj = await get_user_obj(self, event
         ['recipient'])
-        win = await gp.get_win(gp, recipient_obj)
-        loss = await gp.get_loss(gp, recipient_obj)
+        print(f"id: {recipient_obj.id}")
+        user = await db_s2as(User.objects.get)(id=recipient_obj.id)
+        avatar = await db_s2as(get_avatar_url)(user)
+        # win = await gp.get_win(gp, recipient_obj)
+        # loss = await gp.get_loss(gp, recipient_obj)
 
         await self.send(text_data=json.dumps({
             "sender": event['sender'],
             "recipient": event['recipient'],
-            "win" : win,
-            "loss" : loss
+            "username": recipient_obj.username,
+            "email": recipient_obj.email,
+            "avatar": avatar,
+            # "win" : win,
+            # "loss" : loss
         }))
 
     async def receive_msg(self):
