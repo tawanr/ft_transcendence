@@ -1,7 +1,9 @@
 import jwt
+import json
 from django.conf import settings
 from account.models import UserToken
 from .utils_models import clear_notification
+from .utils_consumers import display_chat_history
 
 async def check_authorization_header(self):
 	print("In check_auth function!!!")
@@ -67,6 +69,10 @@ async def check_authorization_header(self):
 		print("User is invalid!!!")
 		await self.ft_send_err("disconnect", "User is invalid!!!")
 		return
+	await self.send(text_data=json.dumps({
+		"chats_data" : await display_chat_history(self),
+	}))
+
 	self.active_channel[self.user] = self.channel_name
 	#clear notification
 	await clear_notification(self, self.user)

@@ -30,16 +30,10 @@ class Chat(models.Model):
 	notification = models.BooleanField(default=False)
 
 	async def assign_notification(self, status, sender):
-		print("In assign_noti")
-		# latest_timestamp = Chat.objects.aggregate(latest_timestamp=Max('timestamp'))['latest_timestamp']
 		latest_timestamp_dict = await sync_to_async(Chat.objects.aggregate)(latest_timestamp=Max('timestamp'))
 		latest_timestamp = latest_timestamp_dict['latest_timestamp']
 
 		async for ch_obj in Chat.objects.filter(sender=sender, timestamp=latest_timestamp):
-			print(f"sender: {ch_obj.sender}")
-			print(f"content: {ch_obj.content}")
-			print(f"timestamp: {ch_obj.timestamp}")
-			print(f"{ch_obj.timestamp}, status: {status}")
 			ch_obj.notification = status
 			await ch_obj.asave()
 

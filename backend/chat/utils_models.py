@@ -40,8 +40,6 @@ async def check_notification(self, sender, recipient):
 	self.notification = await db_s2as(Chat.objects.filter(sender=sender, notification=True).count)()
 
 async def clear_notification(self, recipient):
-	print("In clear_notification")
-	print(f"room_name: {self.room_name}")
 	room, _ = await db_s2as(ChatRoom.objects.get_or_create)(
 		name=self.room_name,
 		defaults={"name": self.room_name}
@@ -49,5 +47,3 @@ async def clear_notification(self, recipient):
 	async for ch_obj in Chat.objects.filter(room=room, recipient=recipient, notification=True):
 		ch_obj.notification = False
 		await ch_obj.asave()
-	print("Cleat noti successfully")
-

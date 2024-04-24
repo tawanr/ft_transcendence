@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from .auth import check_authorization_header, check_jwt
 from .utils_models import get_blockUser_obj, get_user_obj, get_avatar_url, check_notification, clear_notification
-from .utils_consumers import print_chats_data
+from .utils_consumers import print_chats_data, display_chat_history
 # from gameplay.models import GamePlayer as gp
 
 User = get_user_model()
@@ -101,8 +101,7 @@ class UserConsumer(AsyncWebsocketConsumer):
             if self.data.get("connect"):
                 print("Connection from browser")
                 await self.send(text_data=json.dumps({
-                    "type": "success",
-                    "details": f"Valid authentication"
+                    "chats_data" : await display_chat_history(self),
                 }))
                 return
 
@@ -271,13 +270,13 @@ class UserConsumer(AsyncWebsocketConsumer):
                 time = time.strftime("%Y-%m-%d %H.%M.%S")
 
                 self.chats_data.append({
-                    'date': time,
-                    'isSent': chat.sender == sender,
                     'senderName': chat.sender,
                     'message': chat.content,
+                    'date': time,
+                    'isSent': chat.sender == sender,
                 })
 
-        print_chats_data(self)
+        print_chats_data(self.chats_data)
         ##Notification
         await check_notification(self, sender, recipient)
 
