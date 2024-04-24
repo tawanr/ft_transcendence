@@ -24,7 +24,7 @@ class Chat(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE) #user is player name not username
 	room = models.ForeignKey('ChatRoom', on_delete=models.CASCADE)
 	sender = models.TextField()
-	recipient = models.TextField()
+	recipient = models.TextField(default=None)
 	content = models.TextField()
 	timestamp = models.DateTimeField(auto_now_add=True)
 	notification = models.BooleanField(default=False)
