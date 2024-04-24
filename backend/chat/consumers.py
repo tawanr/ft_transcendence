@@ -7,7 +7,7 @@ from .models import ChatRoom, Chat
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from .auth import check_authorization_header, check_jwt
-from .utils_models import get_blockUser_obj, get_user_obj, get_avatar_url, check_notification
+from .utils_models import get_blockUser_obj, get_user_obj, get_avatar_url, check_notification, clear_notification
 from .utils_consumers import print_chats_data
 # from gameplay.models import GamePlayer as gp
 
@@ -27,11 +27,10 @@ class UserConsumer(AsyncWebsocketConsumer):
         await self.accept()
         print("Connect to websocket!!!")
         self.user = None
-        self.room_name = None
-        await check_authorization_header(self)
-
         self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
         print(f"room_name is {self.room_name}")
+
+        await check_authorization_header(self)
 
         self.room_group_name = "chat_%s" % self.room_name
         await self.channel_layer.group_add(
@@ -83,7 +82,6 @@ class UserConsumer(AsyncWebsocketConsumer):
                 print("JSON message error:", e)
                 await self.ft_send_err("disconnect", f"JSON message error: {e}")
                 return
-            connect = self.data.get("connect")
 
             if self.user:
                 pass
@@ -97,10 +95,15 @@ class UserConsumer(AsyncWebsocketConsumer):
             if (self.data.get("sender")):
                 sender = self.data.get("sender")
                 UserConsumer.active_channel[sender] = self.channel_name
+                await clear_notification(self, self.user)
 
             print("Pass authentication!!!")
-            if connect == self.data.get("authorization"):
+            if self.data.get("connect"):
                 print("Connection from browser")
+                await self.send(text_data=json.dumps({
+                    "type": "success",
+                    "details": f"Valid authentication"
+                }))
                 return
 
             req_dict = {

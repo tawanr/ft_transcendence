@@ -1,6 +1,7 @@
 import jwt
 from django.conf import settings
 from account.models import UserToken
+from .utils_models import clear_notification
 
 async def check_authorization_header(self):
 	print("In check_auth function!!!")
@@ -67,6 +68,8 @@ async def check_authorization_header(self):
 		await self.ft_send_err("disconnect", "User is invalid!!!")
 		return
 	self.active_channel[self.user] = self.channel_name
+	#clear notification
+	await clear_notification(self, self.user)
 	print(f"Connect from user_id: {self.user}")
 
 async def check_jwt(self, token):

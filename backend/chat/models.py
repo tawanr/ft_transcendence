@@ -43,6 +43,11 @@ class Chat(models.Model):
 			ch_obj.notification = status
 			await ch_obj.asave()
 
+	async def clear_notification(self, recipient, room):
+		async for ch_obj in Chat.objects.filter(room=room, recipient=recipient, notification=True):
+			ch_obj.notification = False
+			await ch_obj.asave()
+
 #Each Chat instance is associated with exactly one ChatRoom instance
 class ChatRoom(models.Model):
 	name = models.TextField()

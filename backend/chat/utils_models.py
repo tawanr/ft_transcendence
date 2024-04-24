@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from channels.db import database_sync_to_async as db_s2as
-from .models import BlockUser, Chat
+from .models import BlockUser, Chat, ChatRoom
 
 User = get_user_model()
 
@@ -37,7 +37,17 @@ async def check_notification(self, sender, recipient):
 	else:
 		await ch_obj.assign_notification(False, sender)
 
-	# self.notification = Chat.objects.filter(sender=sender, notification=True).count()
 	self.notification = await db_s2as(Chat.objects.filter(sender=sender, notification=True).count)()
-	# async for obj in Chat.objects.filter(sender=sender, notification=True):
-	# 	self.notification += 1
+
+async def clear_notification(self, recipient):
+	print("In clear_notification")
+	print(f"room_name: {self.room_name}")
+	room, _ = await db_s2as(ChatRoom.objects.get_or_create)(
+		name=self.room_name,
+		defaults={"name": self.room_name}
+	)
+	async for ch_obj in Chat.objects.filter(room=room, recipient=recipient, notification=True):
+		ch_obj.notification = False
+		await ch_obj.asave()
+	print("Cleat noti successfully")
+
