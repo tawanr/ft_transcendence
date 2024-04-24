@@ -161,13 +161,13 @@ class GameRoom(models.Model):
         self.is_active = False
         await self.asave()
 
-    async def update_win_loss(self, game_room):
-        async for gp_obj in GamePlayer.objects.filter(game_room=game_room).select_related('player'):
-            if gp_obj.is_winner is True:
-                gp_obj.win += 1
-            else:
-                gp_obj.loss += 1
-            await gp_obj.asave()
+    # async def update_win_loss(self, game_room):
+    #     async for gp_obj in GamePlayer.objects.filter(game_room=game_room).select_related('player'):
+    #         if gp_obj.is_winner is True:
+    #             gp_obj.win += 1
+    #         else:
+    #             gp_obj.loss += 1
+    #         await gp_obj.asave()
 
     async def force_end(self, player_id):
         if not player_id:

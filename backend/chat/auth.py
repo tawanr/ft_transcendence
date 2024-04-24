@@ -66,7 +66,7 @@ async def check_authorization_header(self):
 		print("User is invalid!!!")
 		await self.ft_send_err("disconnect", "User is invalid!!!")
 		return
-
+	self.active_channel[self.user] = self.channel_name
 	print(f"Connect from user_id: {self.user}")
 
 async def check_jwt(self, token):
