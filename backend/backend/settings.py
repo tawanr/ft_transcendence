@@ -26,7 +26,10 @@ SECRET_KEY = "django-insecure-b!iyg%8cdbj12p)favhxpc7-d+3*bja4*tj3_v@fl#zzc0-jep
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "backend",
+    "localhost",
+]
 
 
 # Application definition
@@ -42,9 +45,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_prometheus",
 ]
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -55,6 +60,7 @@ MIDDLEWARE = [
     "backend.middleware.JWTAuthenticaitonMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 ROOT_URLCONF = "backend.urls"
@@ -155,31 +161,31 @@ MEDIA_ROOT = os.path.join(BASE_DIR)
 MEDIA_URL = "/"
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-      'logstash': {
-          'level': 'DEBUG',
-          'class': 'logstash.LogstashHandler',
-          'host': 'logstash',
-          'port': 5959,
-          'version': 0,
-          'message_type': 'logstash',
-          'tags': ['backend'],
-      },
-      'console': {
-          "class": 'logging.StreamHandler',
-      },
-  },
-  'root': {
-    'handlers': ['console', 'logstash'],
-    'level': 'WARNING',
-  },
-  'loggers': {
-      'django.request': {
-          'handlers': ['console', 'logstash'],
-          'level': 'DEBUG',
-          'propagate': True,
-      },
-  },
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "logstash": {
+            "level": "DEBUG",
+            "class": "logstash.LogstashHandler",
+            "host": "logstash",
+            "port": 5959,
+            "version": 0,
+            "message_type": "logstash",
+            "tags": ["backend"],
+        },
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["logstash"],
+        "level": "WARNING",
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["logstash"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+    },
 }

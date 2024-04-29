@@ -13,6 +13,8 @@ volumes:
     driver: local
   logstashdata01:
     driver: local
+  prom_data:
+
 
 services:
   backend:
@@ -222,6 +224,34 @@ services:
       interval: 10s
       timeout: 10s
       retries: 120
+
+  prometheus:
+    image: prom/prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    volumes:
+      - ./monitoring:/etc/prometheus
+      - prom_data:/prometheus
+    networks:
+      - transcendence
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    volumes:
+      - ./monitoring/grafana:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/dashboards/provisioning/dashboard.yaml:/etc/grafana/provisioning/dashboards/main.yaml
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - transcendence
 
 networks:
   transcendence:
