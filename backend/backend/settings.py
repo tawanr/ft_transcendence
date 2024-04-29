@@ -144,8 +144,8 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
     "http://localhost",
 ]
 SESSION_COOKIE_SAMESITE = "None"
@@ -153,3 +153,33 @@ SESSION_COOKIE_SAMESITE = "None"
 JWT_KEY = os.environ.get("JWT_KEY")
 MEDIA_ROOT = os.path.join(BASE_DIR)
 MEDIA_URL = "/"
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+      'logstash': {
+          'level': 'DEBUG',
+          'class': 'logstash.LogstashHandler',
+          'host': 'logstash',
+          'port': 5959,
+          'version': 0,
+          'message_type': 'logstash',
+          'tags': ['backend'],
+      },
+      'console': {
+          "class": 'logging.StreamHandler',
+      },
+  },
+  'root': {
+    'handlers': ['console', 'logstash'],
+    'level': 'WARNING',
+  },
+  'loggers': {
+      'django.request': {
+          'handlers': ['console', 'logstash'],
+          'level': 'DEBUG',
+          'propagate': True,
+      },
+  },
+}

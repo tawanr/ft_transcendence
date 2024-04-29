@@ -1,24 +1,29 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/postgres
 {
-    "name": "Python 3 & PostgreSQL",
-    "dockerComposeFile": "docker-compose.yml",
-    "service": "app",
+    "name": "ft_transcendence Dev Container",
+    "dockerComposeFile": [
+        "../docker-compose.yml",
+        "docker-compose.yml"
+    ],
+    "service": "backend",
     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
     "features": {
-        "ghcr.io/devcontainers-contrib/features/ruff:1": {}
+        "ghcr.io/devcontainers-contrib/features/poetry:1": {},
+        "ghcr.io/devcontainers-contrib/features/ruff:1": {},
+        "ghcr.io/devcontainers/features/docker-from-docker:1": {}
     },
     // Features to add to the dev container. More info: https://containers.dev/features.
     // "features": {},
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // This can be used to network with other containers or the host.
-    "forwardPorts": [
-        "80",
-        "5000",
-        "5432",
-        "8000",
-        "8080"
-    ],
+    // "forwardPorts": [
+    //     "80",
+    //     "5000",
+    //     "5432",
+    //     "8000",
+    //     "8080"
+    // ],
     // Use 'postCreateCommand' to run commands after the container is created.
     "postCreateCommand": ".devcontainer/postCreate.sh"
     // Configure tool-specific properties.
