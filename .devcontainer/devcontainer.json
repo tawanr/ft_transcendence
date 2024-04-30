@@ -8,13 +8,6 @@
     ],
     "service": "backend",
     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-    "customizations": {
-        "vscode": {
-            "extensions": [
-                "ritwickdey.liveserver"
-            ]
-        }
-    },
     "features": {
         "ghcr.io/devcontainers-contrib/features/poetry:1": {},
         "ghcr.io/devcontainers-contrib/features/ruff:1": {},
