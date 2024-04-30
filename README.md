@@ -59,8 +59,8 @@ make backend
 -   [x] Major module: Remote players
 -   [ ] Major module: Live Chat
 -   [ ] Major module: Implement Two-Factor Authentication (2FA) and JWT
--   [ ] Major module: Infrastructure Setup with ELK
--   [ ] Minor module: Monitoring system
+-   [x] Major module: Infrastructure Setup with ELK
+-   [x] Minor module: Monitoring system
 -   [ ] Major module: Replacing Basic Pong with Server-Side Pong and Implementing an API
 -   [x] Major module: Implementing Advanced 3D Techniques
 
