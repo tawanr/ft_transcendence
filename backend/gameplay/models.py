@@ -1,8 +1,13 @@
 import random
 import string
 import uuid
+import asyncio
 
 from django.db import models
+from django.contrib.auth import get_user_model
+from asgiref.sync import sync_to_async
+
+User = get_user_model()
 
 
 class TournamentPlayer(models.Model):
@@ -35,6 +40,10 @@ class Tournament(models.Model):
             bracket.append([players[i], players[i + 1]])
         return bracket
 
+    def test_tournament(self):
+        for player in self.players.all():
+            # Perform tests or operations related to the tournament
+            print(f"Testing tournament for player: {player.username}")
 
 def generate_game_code():
     return "".join(random.choices(string.ascii_uppercase, k=6))
@@ -48,6 +57,8 @@ class GamePlayer(models.Model):
     name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=False)
     is_winner = models.BooleanField(default=False)
+    # win = models.PositiveIntegerField(default=0)
+    # loss = models.PositiveIntegerField(default=0)
     score = models.IntegerField(default=0)
     session_id = models.UUIDField(default=uuid.uuid4)
     player_number = models.IntegerField(default=1)
@@ -62,6 +73,17 @@ class GamePlayer(models.Model):
                 name="Player number unique in room",
             ),
         ]
+    # async def get_win(self, user):
+    #     win = 0
+    #     async for gp_obj in GamePlayer.objects.filter(player=user):
+    #         win += gp_obj.win
+    #     return win
+
+    # async def get_loss(self, user):
+    #     loss = 0
+    #     async for gp_obj in GamePlayer.objects.filter(player=user):
+    #         loss += gp_obj.loss
+    #     return loss
 
 
 class GameRoom(models.Model):
@@ -139,7 +161,18 @@ class GameRoom(models.Model):
         self.is_active = False
         await self.asave()
 
+    # async def update_win_loss(self, game_room):
+    #     async for gp_obj in GamePlayer.objects.filter(game_room=game_room).select_related('player'):
+    #         if gp_obj.is_winner is True:
+    #             gp_obj.win += 1
+    #         else:
+    #             gp_obj.loss += 1
+    #         await gp_obj.asave()
+
     async def force_end(self, player_id):
+        if not player_id:
+            print("Invalid player_id")
+            return
         self.is_active = False
         self.is_finished = True
         await (
@@ -148,6 +181,11 @@ class GameRoom(models.Model):
             .aupdate(is_winner=True)
         )
         await self.asave()
+
+        # test_obj = await sync_to_async(GamePlayer.objects.filter(game_room=self).count)()
+        # if test_obj <= 1:
+        #     return
+        # await self.update_win_loss(self)
 
     async def victory(self, player_id):
         self.is_active = False
@@ -158,6 +196,8 @@ class GameRoom(models.Model):
             .aupdate(is_winner=True)
         )
         await self.asave()
+        # await self.update_win_loss(self)
+
 
     def get_player_by_num(self, player_number) -> GamePlayer:
         return GamePlayer.objects.filter(
@@ -186,3 +226,16 @@ class GameRoom(models.Model):
             .filter(player=user, is_winner=True)
             .exists()
         )
+
+    async def test_user_record(self, user, player_id):
+        await self.victory(player_id)
+        # win = 0
+        # loss = 0
+
+        async for gp_obj in GamePlayer.objects.filter(player=user):
+            # print(f"In for loop to update win, loss, is_win: {gp_obj.is_winner}")
+            # win += gp_obj.win
+            # loss += gp_obj.loss
+            await gp_obj.asave()
+
+        # print(f"username: {user.username}, win: {win}, loss: {loss}")

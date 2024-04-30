@@ -23,5 +23,6 @@ from django.urls import include, path
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("account/", include("account.urls")),
+	  path("gameplay/", include("gameplay.urls")),
     path("", include("django_prometheus.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

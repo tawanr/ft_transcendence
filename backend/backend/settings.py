@@ -37,6 +37,7 @@ ALLOWED_HOSTS = [
 INSTALLED_APPS = [
     "account",
     "gameplay",
+	  "chat",
     "daphne",
     "corsheaders",
     "django.contrib.admin",
@@ -45,6 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+	  "django.contrib.postgres",
     "django_prometheus",
 ]
 
@@ -153,6 +155,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
     "http://localhost",
+	# "http://localhost:5500",
+	# "http://127.0.0.1:5500",
+	# "http://127.0.0.1:80",
 ]
 SESSION_COOKIE_SAMESITE = "None"
 
