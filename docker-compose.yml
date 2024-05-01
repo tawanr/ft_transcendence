@@ -39,7 +39,7 @@ services:
   frontend:
     image: nginx
     ports:
-      - "8080:80"
+      - "${FRONTEND_PORT}:80"
     volumes:
       - ./nginx/:/etc/nginx/conf.d/
       - ./frontend/:/frontend/

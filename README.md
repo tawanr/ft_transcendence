@@ -52,6 +52,7 @@ make backend
 ### Mandatory
 
 -   [x] Major module: Use a Framework as backend
+-   [x] Minor module: Use a database for the backend
 -   [x] Minor module: Use a front-end framework or toolkit
 -   [ ] Major module: Standard user management, authentication, users across
         tournaments
@@ -64,7 +65,7 @@ make backend
 -   [ ] Major module: Replacing Basic Pong with Server-Side Pong and Implementing an API
 -   [x] Major module: Implementing Advanced 3D Techniques
 
-**Total**: 8 Major Modules + 2 Minor Modules
+**Total**: 8 Major Modules + 3 Minor Modules
 
 ### Optional
 

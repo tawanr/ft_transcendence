@@ -37,7 +37,7 @@ ALLOWED_HOSTS = [
 INSTALLED_APPS = [
     "account",
     "gameplay",
-	  "chat",
+    "chat",
     "daphne",
     "corsheaders",
     "django.contrib.admin",
@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-	  "django.contrib.postgres",
+    "django.contrib.postgres",
     "django_prometheus",
 ]
 
@@ -151,13 +151,12 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOW_CREDENTIALS = True
+FRONTEND_PORT = os.environ.get("FRONTEND_PORT", "80")
+FRONTEND_HOST = "http://" + os.environ.get("HOST", "localhost") + ":" + FRONTEND_PORT
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-    "http://localhost",
-	# "http://localhost:5500",
-	# "http://127.0.0.1:5500",
-	# "http://127.0.0.1:80",
+    FRONTEND_HOST,
+    "http://127.0.0.1:" + FRONTEND_PORT,
+    "http://" + os.environ.get("HOST", "localhost"),
 ]
 SESSION_COOKIE_SAMESITE = "None"
 
