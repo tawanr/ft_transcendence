@@ -45,6 +45,7 @@ class Tournament(models.Model):
             # Perform tests or operations related to the tournament
             print(f"Testing tournament for player: {player.username}")
 
+
 def generate_game_code():
     return "".join(random.choices(string.ascii_uppercase, k=6))
 
@@ -73,6 +74,7 @@ class GamePlayer(models.Model):
                 name="Player number unique in room",
             ),
         ]
+
     # async def get_win(self, user):
     #     win = 0
     #     async for gp_obj in GamePlayer.objects.filter(player=user):
@@ -107,7 +109,9 @@ class GameRoom(models.Model):
 
     async def add_player_name(self, player_name: str):
         current_player_count = (
-            await self.players.acount() if hasattr(self, "players") else 0
+            await GamePlayer.objects.filter(game_room=self).acount()
+            if hasattr(self, "players")
+            else 0
         )
         if (
             self.tournament
@@ -171,7 +175,6 @@ class GameRoom(models.Model):
 
     async def force_end(self, player_id):
         if not player_id:
-            print("Invalid player_id")
             return
         self.is_active = False
         self.is_finished = True
@@ -197,7 +200,6 @@ class GameRoom(models.Model):
         )
         await self.asave()
         # await self.update_win_loss(self)
-
 
     def get_player_by_num(self, player_number) -> GamePlayer:
         return GamePlayer.objects.filter(
@@ -226,6 +228,11 @@ class GameRoom(models.Model):
             .filter(player=user, is_winner=True)
             .exists()
         )
+
+    @property
+    def host(self):
+        host = GamePlayer.objects.filter(game_room=self).first()
+        return host
 
     async def test_user_record(self, user, player_id):
         await self.victory(player_id)

@@ -35,10 +35,10 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
     "account",
     "gameplay",
     "chat",
-    "daphne",
     "corsheaders",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -179,16 +179,32 @@ LOGGING = {
         },
         "console": {
             "class": "logging.StreamHandler",
+            "formatter": "verbose",
         },
     },
     "root": {
         "handlers": ["logstash"],
         "level": "WARNING",
     },
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} - {message}",
+            "style": "{",
+        },
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
+        },
+    },
     "loggers": {
         "django.request": {
-            "handlers": ["logstash"],
+            "handlers": ["console"],
             "level": "DEBUG",
+            "propagate": True,
+        },
+        "gameplay": {
+            "handlers": ["console"],
+            "level": "INFO",
             "propagate": True,
         },
     },

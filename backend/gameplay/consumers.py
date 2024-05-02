@@ -1,16 +1,17 @@
 import asyncio
 import json
-from typing import List
-from uuid import uuid4
 
 from account.models import UserToken
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.http import JsonResponse
-from asgiref.sync import sync_to_async as s2as
 
 import gameplay.constants as constants
 from gameplay.models import GameRoom, GamePlayer
 from gameplay.states import BallState, GameState, PlayerState
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class GameplayConsumer(AsyncWebsocketConsumer):
     game_group_name: str = "game_group"
@@ -31,7 +32,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             ).afirst()
 
         if not game_code or not game_room:
-            print("Cannot find game_code, create new one")
+            logger.info("Creating new game room.")
             game_room = await GameRoom.objects.acreate()
 
         await self.game.reset_states()
@@ -39,10 +40,6 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         self.game.room = game_room
         self.game_code = game_room.game_code
         self.game_group_name = f"game_{self.game_code}"
-
-        self.dummy = ""
-
-        print(f"game_group_name: {self.game_group_name}")
 
         asyncio.create_task(self.check_registered())
 
@@ -60,10 +57,8 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                 )
                 await self.close()
                 return
-        print(f"\n{self.player_id} connected\n")
 
     async def disconnect(self, close_code):
-        self.game.started = False
         await self.channel_layer.group_send(
             self.game_group_name,
             {
@@ -88,6 +83,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
 
         if data["type"] == "client.register":
+            token = None
             if authorization := data.get("authorization"):
                 token = (
                     await UserToken.objects.filter(access_token=authorization)
@@ -97,16 +93,6 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                 if not token or not token.is_token_valid():
                     return JsonResponse({"details": "Unauthorized"}, status=401)
                 self.player_id = await self.game.room.add_player(token.user)
-                #################################################################
-                # print(f"username: {token.user.username}")
-                # if not self.dummy:
-                #     self.dummy = self.player_id
-                # if data.get('test'):
-                #     print("In test condition")
-                #     self.player_id = self.dummy
-                #     print(f"Before get in test_user_record player_id: {self.player_id}")
-                #     await self.game.room.test_user_record(token.user, self.player_id)
-                #################################################################
             elif name := data.get("playerName"):
                 self.player_id = await self.game.room.add_player_name(name)
             else:
@@ -132,7 +118,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                         "type": "roomDetails",
                         "roomCode": self.game_code,
                         "playerId": str(self.player_id),
-                        "player_user": token.user.username
+                        "player_user": token.user.username if token else "",
                     }
                 )
             )
@@ -141,14 +127,12 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             await self.send_group()
 
         if not self.player_id:
-            print(f"player_id: {self.player_id}")
             return
 
         message = {
             **data,
             "player_id": self.player_id,
         }
-        print(f"\n{message}")
         await self.channel_layer.group_send(
             self.game_group_name,
             message,
@@ -158,12 +142,13 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         pass
 
     async def player_leave(self, event):
+        self.game.started = False
         if not self.host:
             return
         await self.game.room.force_end(event["player_id"])
         for player in self.game.players:
             player.ready = False
-        print(f"\nPlayer Disconnected: {event['player_id']}\n")
+        logger.info(f"\nPlayer Disconnected: {event['player_id']}\n")
         await self.update_group()
 
     async def player_ready(self, event):
@@ -256,7 +241,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
     async def game_loop(self):
         if not self.host:
             return
-        print("\nGame started.\n")
+        logger.debug("\nGame started.\n")
         await self.game.ball.reset_pos()
         while self.game.started:
             async with self.update_lock:
@@ -268,4 +253,4 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             await self.update_group()
             await self.send_group()
             await asyncio.sleep(0.03)
-        print("\nGame ended.\n")
+        logger.debug("\nGame ended.\n")
