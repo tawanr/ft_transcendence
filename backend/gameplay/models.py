@@ -7,8 +7,6 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from asgiref.sync import sync_to_async
 
-User = get_user_model()
-
 
 class TournamentPlayer(models.Model):
     player = models.ForeignKey("auth.User", on_delete=models.CASCADE)
@@ -20,30 +18,50 @@ class Tournament(models.Model):
     game_type = models.CharField(max_length=100, default="pong")
     players = models.ManyToManyField("auth.User", through=TournamentPlayer)
     is_active = models.BooleanField(default=False)
+    is_finished = models.BooleanField(default=False)
 
-    def check_tournament_ready(self):
-        if self.players.count() < 3:
+    async def add_player(self, player):
+        await sync_to_async(self.players.add)(player)
+
+    @property
+    async def is_ready(self):
+        if self.is_finished or await self.players.acount() < 3:
             return False
         return True
 
-    def start_tournament(self):
-        if not self.check_tournament_ready():
+    async def start_tournament(self):
+        if not await self.is_ready:
             return False
+        # Check if there are existing games
         self.is_active = True
-        self.save()
+        await self.asave()
+        game = None
+        players = [player async for player in self.players.all()]
+        for idx, player in enumerate(players):
+            if idx % 2 == 0:
+                game = await GameRoom.objects.acreate(tournament=self)
+            await game.add_player(player)
+        if await game.players.acount() == 1:
+            game.is_finished = True
+            await game.asave()
+            # await game.players.afirst().aupdate(is_winner=True)
         return True
 
-    def bracket(self):
+    async def bracket(self):
         players = self.players.all()
         bracket = []
         for i in range(0, len(players), 2):
             bracket.append([players[i], players[i + 1]])
         return bracket
 
-    def test_tournament(self):
-        for player in self.players.all():
-            # Perform tests or operations related to the tournament
-            print(f"Testing tournament for player: {player.username}")
+    async def get_games(self, level=None, is_active=True):
+        qs = GameRoom.objects.filter(
+            tournament=self,
+            is_active=is_active,
+        )
+        if level:
+            qs = qs.filter(level=level)
+        return [game async for game in qs]
 
 
 def generate_game_code():
@@ -102,7 +120,7 @@ class GameRoom(models.Model):
     max_players = models.IntegerField(default=2, blank=True)
 
     def __str__(self):
-        return self.room_name
+        return self.game_code
 
     class Meta:
         unique_together = ("game_code", "is_active")
@@ -129,17 +147,17 @@ class GameRoom(models.Model):
 
     async def add_player(self, player):
         current_player_count = await self.players.acount()
-        if self.tournament and await self.players.filter(player=player).aexists():
-            game_player = await GamePlayer.objects.get(player=player, game_room=self)
-            game_player.is_active = True
-            game_player.save()
-            return
-        if (
-            self.tournament
-            or self.is_started
-            or current_player_count >= self.max_players
-        ):
-            return
+        # if self.tournament and await self.players.filter(player=player).aexists():
+        #     game_player = await GamePlayer.objects.aget(player=player, game_room=self)
+        #     game_player.is_active = True
+        #     game_player.save()
+        #     return
+        # if (
+        #     self.tournament
+        #     or self.is_started
+        #     or current_player_count >= self.max_players
+        # ):
+        #     return
         game_player = await GamePlayer.objects.acreate(
             game_room=self,
             player=player,

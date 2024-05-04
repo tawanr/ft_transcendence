@@ -16,6 +16,9 @@ mm:
 backend:
 	cd backend && python manage.py runserver 0.0.0.0:8000
 
+test:
+	cd backend && python manage.py test
+
 shell:
 	cd backend && python manage.py shell
 
