@@ -1,8 +1,22 @@
 from django.contrib.auth import get_user_model
 from channels.db import database_sync_to_async as db_s2as
-from .models import BlockUser, Chat, ChatRoom
+from .models import BlockUser, ChatRoom, Notification, UserList
 
 User = get_user_model()
+
+async def create_user_room(self):
+	room = await get_room_obj(self.room_name)
+	user_obj = await get_user_obj(self, self.user)
+	await db_s2as(UserList.objects.create)(
+		user=user_obj,
+		room=room,
+	)
+
+async def get_user_list(self):
+	room = await db_s2as(ChatRoom.objects.get)(name=self.room_name)
+	result = UserList.objects.filter(room=room).values_list('user__username', flat=True).distinct()
+	print("after assign list, before return")
+	return await db_s2as(list)(result)
 
 async def get_user_obj(self, username):
 	try:
@@ -12,6 +26,21 @@ async def get_user_obj(self, username):
 		await self.ft_send_err("disconnect", f"Invalid username: {username}. Closing connection.")
 		raise self.CustomException("Invalid username", username)
 		# return None  # Return None if the user doesn't exist
+
+async def get_room_obj(room_name):
+	room, _ = await db_s2as(ChatRoom.objects.get_or_create)(
+		name=room_name,
+		defaults={"name": room_name}  # Defaults to use if the object is created
+	)
+	return room
+
+async def get_noti_obj(user_obj, room_obj):
+	noti, _ = await db_s2as(Notification.objects.get_or_create)(
+			user=user_obj,
+			room=room_obj,
+			defaults={"user": user_obj, "room": room_obj}
+		)
+	return noti
 
 async def get_blockUser_obj(user, username):
 	sender_block_obj, _ = await db_s2as(BlockUser.objects.get_or_create)(
@@ -27,23 +56,23 @@ async def get_blockUser_obj(user, username):
 def get_avatar_url(user):
     return user.details.avatar.url if user.details.avatar else ""
 
-async def check_notification(self, sender, recipient):
-	self.notification = 0
-	ch_query = Chat.objects.filter(sender=sender)
-	ch_obj = await db_s2as(ch_query.latest)('timestamp')
+# async def check_notification(self, sender, recipient):
+# 	self.notification = 0
+# 	ch_query = Chat.objects.filter(sender=sender)
+# 	ch_obj = await db_s2as(ch_query.latest)('timestamp')
 
-	if not self.active_channel.get(recipient):
-		await ch_obj.assign_notification(True, sender)
-	else:
-		await ch_obj.assign_notification(False, sender)
+# 	if not self.active_channel.get(recipient):
+# 		await ch_obj.assign_notification(True, sender)
+# 	else:
+# 		await ch_obj.assign_notification(False, sender)
 
-	self.notification = await db_s2as(Chat.objects.filter(sender=sender, notification=True).count)()
+# 	self.notification = await db_s2as(Chat.objects.filter(sender=sender, notification=True).count)()
 
-async def clear_notification(self, recipient):
-	room, _ = await db_s2as(ChatRoom.objects.get_or_create)(
-		name=self.room_name,
-		defaults={"name": self.room_name}
-	)
-	async for ch_obj in Chat.objects.filter(room=room, recipient=recipient, notification=True):
-		ch_obj.notification = False
-		await ch_obj.asave()
+# async def clear_notification(self, recipient):
+# 	room, _ = await db_s2as(ChatRoom.objects.get_or_create)(
+# 		name=self.room_name,
+# 		defaults={"name": self.room_name}
+# 	)
+# 	async for ch_obj in Chat.objects.filter(room=room, recipient=recipient, notification=True):
+# 		ch_obj.notification = False
+# 		await ch_obj.asave()

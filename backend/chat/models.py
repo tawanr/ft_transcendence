@@ -24,7 +24,7 @@ class Chat(models.Model):
 	user = models.ForeignKey(User, on_delete=models.CASCADE) #user is player name not username
 	room = models.ForeignKey('ChatRoom', on_delete=models.CASCADE)
 	sender = models.TextField()
-	recipient = models.TextField(default=None)
+	# recipient = models.TextField(default=None)
 	content = models.TextField()
 	timestamp = models.DateTimeField(auto_now_add=True)
 	notification = models.BooleanField(default=False)
@@ -37,10 +37,10 @@ class Chat(models.Model):
 			ch_obj.notification = status
 			await ch_obj.asave()
 
-	async def clear_notification(self, recipient, room):
-		async for ch_obj in Chat.objects.filter(room=room, recipient=recipient, notification=True):
-			ch_obj.notification = False
-			await ch_obj.asave()
+	# async def clear_notification(self, recipient, room):
+	# 	async for ch_obj in Chat.objects.filter(room=room, recipient=recipient, notification=True):
+	# 		ch_obj.notification = False
+	# 		await ch_obj.asave()
 
 #Each Chat instance is associated with exactly one ChatRoom instance
 class ChatRoom(models.Model):
@@ -68,3 +68,12 @@ class BlockUser(models.Model):
 	def is_blocked_user(self, blocked_username):
 		# Filter Chat instances associated with the user and have sender equal to playerName
 		return blocked_username in self.blocked_users
+
+class Notification(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	room = models.ForeignKey('ChatRoom', on_delete=models.CASCADE)
+	notification = models.PositiveIntegerField(default=0)
+
+class UserList(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	room = models.ForeignKey('ChatRoom', on_delete=models.CASCADE)
