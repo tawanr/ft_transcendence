@@ -7,11 +7,18 @@ from asgiref.sync import sync_to_async
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from chat.models import User
+
 
 class TournamentPlayer(models.Model):
     player = models.ForeignKey("auth.User", on_delete=models.CASCADE)
     tournament = models.ForeignKey("Tournament", on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
+    is_winner = models.BooleanField(default=False)
+    date_added = models.DateTimeField(auto_now_add=True, null=True)
+
+    class Meta:
+        ordering = ["date_added"]
 
 
 class Tournament(models.Model):
@@ -23,9 +30,9 @@ class Tournament(models.Model):
 
     async def add_player(self, player):
         await sync_to_async(self.players.add)(player)
-        if self.players.count() > self.size:
+        if await self.players.acount() > self.size:
             self.size *= 2
-            self.save()
+            await self.asave()
 
     @property
     async def is_ready(self):
@@ -39,17 +46,30 @@ class Tournament(models.Model):
         # Check if there are existing games
         self.is_active = True
         await self.asave()
-        game = None
-        players = [player async for player in self.players.all()]
-        for idx, player in enumerate(players):
-            if idx % 2 == 0:
-                game = await GameRoom.objects.acreate(tournament=self)
-            await game.add_player(player)
-        if await game.players.acount() == 1:
-            game.is_finished = True
-            await game.asave()
-            # await game.players.afirst().aupdate(is_winner=True)
+        await self._create_round_games(level=1)
         return True
+
+    async def _create_round_games(self, level):
+        games = []
+        round_size = int(self.size / (level * 2))
+        players = [
+            player.player
+            async for player in self.players.through.objects.filter(
+                is_active=True
+            ).select_related("player")
+        ]
+        for idx, player in enumerate(players):
+            if idx < round_size:
+                games.append(
+                    await GameRoom.objects.acreate(tournament=self, level=level)
+                )
+            await games[idx % round_size].add_player(player)
+        for game in games:
+            if await game.players.acount() == 1:
+                await game.victory(
+                    (await GamePlayer.objects.aget(game_room=game)).session_id
+                )
+                await game.asave()
 
     async def bracket(self):
         players = self.players.all()
@@ -58,11 +78,12 @@ class Tournament(models.Model):
             bracket.append([players[i], players[i + 1]])
         return bracket
 
-    async def get_games(self, level=None, is_active=True):
+    async def get_games(self, level=None, is_active=False):
         qs = GameRoom.objects.filter(
             tournament=self,
-            is_active=is_active,
         )
+        if is_active:
+            qs = qs.filter(is_active=is_active)
         if level:
             qs = qs.filter(level=level)
         return [game async for game in qs]
@@ -74,20 +95,17 @@ class Tournament(models.Model):
         return True
 
     async def start_new_round(self) -> bool:
-        if not self.check_round_end():
+        if not await self.check_round_end():
             return False
         current_round = await self.get_current_round()
-        games = [
-            game
-            async for game in GameRoom.objects.filter(
-                tournament=self,
-                is_finished=True,
-                level=current_round,
-            ).all()
-        ]
-        # for idx, game in enumerate(games):
-            
-
+        if await self.players.through.objects.filter(is_active=True).acount() == 1:
+            await self.players.through.objects.filter(is_active=True).aupdate(
+                is_winner=True
+            )
+            self.is_finished = True
+            self.is_active = False
+            await self.asave()
+        await self._create_round_games(current_round + 1)
         return True
 
     async def get_current_round(self) -> int:
@@ -233,10 +251,10 @@ class GameRoom(models.Model):
             return
         self.is_active = False
         self.is_finished = True
-        await (
-            GamePlayer.objects.filter(game_room=self)
-            .exclude(session_id=player_id)
-            .aupdate(is_winner=True)
+        winner = await self.players.exclude(gameplayer__session_id=player_id).afirst()
+        await self.players.through.objects.filter(player=winner).aupdate(is_winner=True)
+        await self._deactivate_tournament_player(
+            await self.players.exclude(id=winner.id).afirst()
         )
         await self.asave()
 
@@ -248,13 +266,23 @@ class GameRoom(models.Model):
     async def victory(self, player_id):
         self.is_active = False
         self.is_finished = True
-        await (
-            GamePlayer.objects.filter(game_room=self)
-            .filter(session_id=player_id)
-            .aupdate(is_winner=True)
+        winner = await self.players.filter(gameplayer__session_id=player_id).afirst()
+        await self.players.through.objects.filter(player=winner).aupdate(is_winner=True)
+        await self._deactivate_tournament_player(
+            await self.players.exclude(id=winner.id).afirst()
         )
         await self.asave()
         # await self.update_win_loss(self)
+
+    async def _deactivate_tournament_player(self, user: User):
+        if not user:
+            return
+        tournament = await Tournament.objects.aget(gameroom=self)
+        if not tournament:
+            return
+        await tournament.players.through.objects.filter(player=user).aupdate(
+            is_active=False
+        )
 
     def get_player_by_num(self, player_number) -> GamePlayer:
         return GamePlayer.objects.filter(

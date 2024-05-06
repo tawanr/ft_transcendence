@@ -41,7 +41,7 @@ class TestTournament(TestCase):
         self.assertEqual(len(games), 2)
         players = await games[0].get_players()
         self.assertEqual(players[0].get("name"), "test1")
-        self.assertEqual(players[1].get("name"), "test2")
+        self.assertEqual(players[1].get("name"), "test3")
         self.assertEqual(len(await games[1].get_players()), 1)
         self.assertTrue(games[1].is_finished)
         self.assertFalse(await self.tournament.check_round_end())
@@ -49,3 +49,22 @@ class TestTournament(TestCase):
         await games[0].victory(player.session_id)
         self.assertTrue(await self.tournament.check_round_end())
         await self.tournament.start_new_round()
+
+        games = await self.tournament.get_games(level=2, is_active=True)
+        self.assertEqual(len(games), 1)
+        players = await games[0].get_players()
+        self.assertEqual(players[0].get("name"), "test1")
+        self.assertEqual(players[1].get("name"), "test2")
+        self.assertFalse(await self.tournament.check_round_end())
+        await games[0].victory(players[0].get("player_id"))
+        self.assertTrue(await self.tournament.check_round_end())
+        await self.tournament.start_new_round()
+        self.assertTrue(self.tournament.is_finished)
+        self.assertEqual(
+            (
+                await self.tournament.players.through.objects.select_related(
+                    "player"
+                ).aget(is_winner=True)
+            ).player.username,
+            "test1",
+        )
