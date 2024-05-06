@@ -1,7 +1,7 @@
-from django.test import TestCase
 from django.contrib.auth.models import User
+from django.test import TestCase
 
-from gameplay.models import GameRoom, Tournament
+from gameplay.models import GamePlayer, GameRoom, Tournament
 
 
 class TestTournament(TestCase):
@@ -36,6 +36,7 @@ class TestTournament(TestCase):
         await self.add_players(count=3)
         self.assertTrue(await self.tournament.start_tournament())
         self.assertTrue(self.tournament.is_active)
+        self.assertEqual(await self.tournament.get_current_round(), 1)
         games = await self.tournament.get_games(level=1)
         self.assertEqual(len(games), 2)
         players = await games[0].get_players()
@@ -43,3 +44,8 @@ class TestTournament(TestCase):
         self.assertEqual(players[1].get("name"), "test2")
         self.assertEqual(len(await games[1].get_players()), 1)
         self.assertTrue(games[1].is_finished)
+        self.assertFalse(await self.tournament.check_round_end())
+        player = await GamePlayer.objects.aget(player_id=self.users[0].pk)
+        await games[0].victory(player.session_id)
+        self.assertTrue(await self.tournament.check_round_end())
+        await self.tournament.start_new_round()

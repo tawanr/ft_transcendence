@@ -1,11 +1,11 @@
+import asyncio
 import random
 import string
 import uuid
-import asyncio
 
-from django.db import models
-from django.contrib.auth import get_user_model
 from asgiref.sync import sync_to_async
+from django.contrib.auth import get_user_model
+from django.db import models
 
 
 class TournamentPlayer(models.Model):
@@ -19,9 +19,13 @@ class Tournament(models.Model):
     players = models.ManyToManyField("auth.User", through=TournamentPlayer)
     is_active = models.BooleanField(default=False)
     is_finished = models.BooleanField(default=False)
+    size = models.IntegerField(default=4)
 
     async def add_player(self, player):
         await sync_to_async(self.players.add)(player)
+        if self.players.count() > self.size:
+            self.size *= 2
+            self.save()
 
     @property
     async def is_ready(self):
@@ -62,6 +66,39 @@ class Tournament(models.Model):
         if level:
             qs = qs.filter(level=level)
         return [game async for game in qs]
+
+    async def check_round_end(self) -> bool:
+        qs_games = GameRoom.objects.filter(tournament=self, is_finished=False)
+        if await qs_games.aexists():
+            return False
+        return True
+
+    async def start_new_round(self) -> bool:
+        if not self.check_round_end():
+            return False
+        current_round = await self.get_current_round()
+        games = [
+            game
+            async for game in GameRoom.objects.filter(
+                tournament=self,
+                is_finished=True,
+                level=current_round,
+            ).all()
+        ]
+        for idx, game in enumerate(games):
+            
+
+        return True
+
+    async def get_current_round(self) -> int:
+        level = (
+            await GameRoom.objects.filter(tournament=self)
+            .order_by("-level")
+            .values_list("level", flat=True)
+            .distinct()
+            .afirst()
+        )
+        return level if level > 0 else 0
 
 
 def generate_game_code():
