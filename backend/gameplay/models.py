@@ -40,6 +40,16 @@ class Tournament(models.Model):
             return False
         return True
 
+    async def get_winner(self):
+        if not self.is_finished:
+            return None
+        winner = (
+            await self.players.through.objects.filter(tournament=self, is_winner=True)
+            .select_related("player")
+            .afirst()
+        )
+        return winner.player
+
     async def start_tournament(self):
         if not await self.is_ready:
             return False
@@ -72,10 +82,37 @@ class Tournament(models.Model):
                 await game.asave()
 
     async def bracket(self):
-        players = self.players.all()
+        games = await self.get_games()
+        size = self.size / 2
+        total = size
+        while size > 1:
+            size /= 2
+            total += size
         bracket = []
-        for i in range(0, len(players), 2):
-            bracket.append([players[i], players[i + 1]])
+        for game in games:
+            players = [
+                player
+                async for player in game.gameplayer_set.values(
+                    "name", "score", "is_winner", "player__id"
+                )
+            ]
+            game_bracket = {
+                "finished": game.is_finished,
+                "players": [
+                    {
+                        "id": player["player__id"],
+                        "name": player["name"],
+                        "score": player["score"],
+                        "is_winner": player["is_winner"],
+                    }
+                    for player in players
+                ],
+            }
+            if len(game_bracket.get("players")) < 2:
+                game_bracket["players"].append({})
+            bracket.append(game_bracket)
+        while len(bracket) < total:
+            bracket.append({})
         return bracket
 
     async def get_games(self, level=None, is_active=False):
@@ -96,7 +133,7 @@ class Tournament(models.Model):
 
     async def start_new_round(self) -> bool:
         if not await self.check_round_end():
-            return False
+            raise Exception("Round not finished")
         current_round = await self.get_current_round()
         if await self.players.through.objects.filter(is_active=True).acount() == 1:
             await self.players.through.objects.filter(is_active=True).aupdate(
@@ -105,6 +142,7 @@ class Tournament(models.Model):
             self.is_finished = True
             self.is_active = False
             await self.asave()
+            return False
         await self._create_round_games(current_round + 1)
         return True
 
