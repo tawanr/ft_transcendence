@@ -40,11 +40,16 @@ async def display_chat_history(self):
 		})
 	return chats_data
 
-async def not_block(self, recipient, recipient_obj, sender_obj):
+async def is_block(self, recipient, recipient_obj, sender_obj):
 	recipient_block_obj = await get_blockUser_obj(recipient_obj, recipient)
 	sender_block_obj = await get_blockUser_obj(sender_obj, self.sender)
 
-	return not await db_s2as(recipient_block_obj.is_blocked_user)(self.sender) and not await db_s2as(sender_block_obj.is_blocked_user)(recipient)
+	recipient_block = await db_s2as(recipient_block_obj.is_blocked_user)(self.sender)
+	sender_block = await db_s2as(sender_block_obj.is_blocked_user)(recipient)
+
+	is_block = sender_block or recipient_block
+
+	return is_block
 
 async def save_msg_history(self):
 	print("In save_msg_history")
@@ -58,14 +63,19 @@ async def save_msg_history(self):
 	print(f"is_group: {is_group}")
 
 	for member in recipient_data:
+		print(f"member: {member}")
 		recipient = member if is_group else recipient_data
 		recipient_obj = await get_user_obj(self, recipient)
 
-		if await not_block(self, recipient, recipient_obj, sender_obj):
-			print("Not block!!!")
-			await self.save_massage(recipient_obj, self.sender, room)
-			await check_notification(self, recipient_obj, room)
-		else:
-			print("Block!!!!!!!")
+		if await is_block(self, recipient, recipient_obj, sender_obj):
+			print("Block")
+			if not is_group:
+				break
+			else:
+				continue
+		print("Not block!!!")
+		await self.save_massage(recipient_obj, self.sender, room)
+		await check_notification(self, recipient_obj, room)
+
 		if not is_group:
 			break

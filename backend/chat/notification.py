@@ -20,10 +20,6 @@ async def send_notification(self, recipient):
 	noti = await get_noti_obj(recipient_obj, room_obj)
 	noti_count = noti.notification
 
-	# for k, v in self.map_user_channel.items():
-	# 	print(f"map_user_channel[{k}]: {v}")
-
-	# print(f"noti_count: {noti_count}")
 	if noti_count > 0:
 		await self.channel_layer.group_send(
 			self.room_group_name,
@@ -34,14 +30,6 @@ async def send_notification(self, recipient):
 				"channel_name" : self.channel_name,
 			}
 		)
-		# await self.channel_layer.send(
-		# 	self.map_user_channel[recipient],
-		# 	{
-		# 		"type" : "send_notification",
-		# 		"notification" : noti_count,
-		# 		"user" : self.user
-		# 	}
-		# )
 
 async def clear_notification(self, username):
 	user_obj = await get_user_obj(self, username)

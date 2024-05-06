@@ -1,7 +1,6 @@
 import jwt
 from django.conf import settings
 from account.models import UserToken
-from .utils_models import create_user_room
 from .notification import send_notification
 
 async def check_authorization_header(self):
@@ -68,7 +67,6 @@ async def check_authorization_header(self):
 		await self.ft_send_err("disconnect", "User is invalid!!!")
 		return
 
-	await create_user_room(self)
 	await map_channel(self)
 	await send_notification(self, self.user)
 	print(f"Connect from user_id: {self.user}")
@@ -79,7 +77,6 @@ async def check_authorization_payload(self):
 	# elif authorization := self.data.get("authorization"):
 	# 	self.user = await check_jwt(self, authorization)
 	# 	if self.user:
-	#		await create_user_room(self)
 	# 		await map_channel(self)
 	# 		await send_notification(self)
 	# else:
@@ -89,7 +86,6 @@ async def check_authorization_payload(self):
 	self.user = self.data.get("sender")
 	if self.data.get("chat_history"):
 		await self.send_chat_history()
-	await create_user_room(self)
 	await map_channel(self)
 	await send_notification(self, self.user)
 	# await self.dummy()

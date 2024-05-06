@@ -271,20 +271,6 @@ class UserConsumer(AsyncWebsocketConsumer):
         self.active_channel[self.user] = self.room_name
         await clear_notification(self, self.user)
 
-    async def dummy(self):
-        user_obj = await get_user_obj(self, self.user)
-        room_obj = await get_room_obj(self.room_name)
-
-        noti = await get_noti_obj(user_obj, room_obj)
-        noti_count = noti.notification
-
-        print(f"noti_count: {noti_count}")
-        if noti_count > 0:
-            await self.send(text_data=json.dumps({
-            "notification" : noti_count,
-            "user" : self.user
-        }))
-
     class CustomException(Exception):
         def __init__(self, message, var=None):
             super().__init__(message)
