@@ -85,7 +85,7 @@ class Tournament(models.Model):
                 level=current_round,
             ).all()
         ]
-        for idx, game in enumerate(games):
+        # for idx, game in enumerate(games):
             
 
         return True
