@@ -2,12 +2,11 @@ from channels.db import database_sync_to_async as db_s2as
 from .models import ChatRoom, Notification
 from .utils_models import get_noti_obj, get_user_obj, get_room_obj
 
-def is_active_user(self, username):
-	return self.active_channel.get(username) == self.room_name
-
-async def check_notification(self, user_obj, room):
+async def check_notification(user_obj, room):
+	from .utils_consumers import ActiveUsers as au
 	username = user_obj.username
-	if not is_active_user(self, username):
+	# if not is_active_user(self, username):
+	if not au.is_user_active_in_room(room.name, username):
 		noti = await get_noti_obj(user_obj, room)
 		noti.notification += 1
 		await noti.asave()

@@ -4,6 +4,7 @@ from .utils_models import get_user_obj, get_blockUser_obj, get_room_obj
 from django.utils import timezone
 from .notification import check_notification
 import json
+import threading
 
 def get_owner_name(self, sender_username):
 	if self.user == sender_username:
@@ -75,7 +76,31 @@ async def save_msg_history(self):
 				continue
 		print("Not block!!!")
 		await self.save_massage(recipient_obj, self.sender, room)
-		await check_notification(self, recipient_obj, room)
+		await check_notification(recipient_obj, room)
 
 		if not is_group:
 			break
+
+class ActiveUsers:
+	room_users = {}
+	lock = threading.Lock()
+
+	@classmethod
+	def add_user_to_room(cls, room_name, username):
+		with cls.lock:
+			if room_name not in cls.room_users:
+				cls.room_users[room_name] = set()
+			cls.room_users[room_name].add(username)
+
+	@classmethod
+	def remove_user_from_room(cls, room_name, username):
+		with cls.lock:
+			if room_name in cls.room_users:
+				cls.room_users[room_name].discard(username)
+				if not cls.room_users[room_name]:
+					del cls.room_users[room_name]
+
+	@classmethod
+	def is_user_active_in_room(cls, room_name, username):
+		with cls.lock:
+			return room_name in cls.room_users and username in cls.room_users[room_name]

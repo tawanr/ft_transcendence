@@ -8,16 +8,14 @@ from .models import ChatRoom, Chat
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from .auth import check_authorization_header, check_authorization_payload
-from .utils_models import get_blockUser_obj, get_user_obj, get_avatar_url, get_room_obj, get_noti_obj
-from .utils_consumers import print_chats_data, save_msg_history, display_chat_history
-from .notification import send_notification, clear_notification, is_active_user
+from .utils_models import get_blockUser_obj, get_user_obj, get_avatar_url, get_room_obj
+from .utils_consumers import print_chats_data, save_msg_history, display_chat_history, ActiveUsers as au
+from .notification import send_notification, clear_notification
 # from gameplay.models import GamePlayer as gp
 
 User = get_user_model()
 
 class UserConsumer(AsyncWebsocketConsumer):
-    active_channel = {}
-    map_user_channel = {}
 
     async def ft_send_err(self, type, details):
         await self.send(text_data=json.dumps({
@@ -54,8 +52,7 @@ class UserConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         #hasattr check if the self obj has the attribute room_group_name
         if hasattr(self, 'room_group_name'):
-            if UserConsumer.active_channel.get(self.user):
-                del UserConsumer.active_channel[self.user]
+            au.remove_user_from_room(self.roomname, self.user)
             await self.channel_layer.group_discard(
                 self.room_group_name,
                 self.channel_name
@@ -190,8 +187,6 @@ class UserConsumer(AsyncWebsocketConsumer):
         ['recipient'])
         user = await db_s2as(User.objects.get)(id=recipient_obj.id)
         avatar = await db_s2as(get_avatar_url)(user)
-        # win = await gp.get_win(gp, recipient_obj)
-        # loss = await gp.get_loss(gp, recipient_obj)
 
         await self.send(text_data=json.dumps({
             "sender": event['sender'],
@@ -199,8 +194,6 @@ class UserConsumer(AsyncWebsocketConsumer):
             "username": recipient_obj.username,
             "email": recipient_obj.email,
             "avatar": avatar,
-            # "win" : win,
-            # "loss" : loss
         }))
 
     async def group_send_msg(self):
@@ -225,8 +218,7 @@ class UserConsumer(AsyncWebsocketConsumer):
         print("In chat_message!!!")
         self.sender = event['sender']
 
-        if not is_active_user(self, self.user):
-            print(f"active {self.user}: {self.active_channel.get(self.user)}")
+        if not au.is_user_active_in_room(self.room_name, self.user):
             await send_notification(self, self.user)
             return
 
@@ -265,10 +257,13 @@ class UserConsumer(AsyncWebsocketConsumer):
         }))
 
     async def send_chat_history(self):
+        if self.data.get("chat_history") == "False":
+            au.remove_user_from_room(self.room_name, self.user)
+            return
         await self.send(text_data=json.dumps({
             "chats_data" : await display_chat_history(self),
         }))
-        self.active_channel[self.user] = self.room_name
+        au.add_user_to_room(self.room_name, self.user)
         await clear_notification(self, self.user)
 
     class CustomException(Exception):

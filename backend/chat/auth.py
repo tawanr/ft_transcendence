@@ -2,6 +2,7 @@ import jwt
 from django.conf import settings
 from account.models import UserToken
 from .notification import send_notification
+from .utils_consumers import ActiveUsers as au
 
 async def check_authorization_header(self):
 	print("In check_auth function!!!")
@@ -67,7 +68,6 @@ async def check_authorization_header(self):
 		await self.ft_send_err("disconnect", "User is invalid!!!")
 		return
 
-	await map_channel(self)
 	await send_notification(self, self.user)
 	print(f"Connect from user_id: {self.user}")
 
@@ -77,18 +77,18 @@ async def check_authorization_payload(self):
 	# elif authorization := self.data.get("authorization"):
 	# 	self.user = await check_jwt(self, authorization)
 	# 	if self.user:
-	# 		await map_channel(self)
 	# 		await send_notification(self)
 	# else:
 	# 	print("Invalid authentication!!!")
 	# 	await self.ft_send_err("disconnect", "Invalid registration. Closing connection.")
 	# 	raise self.CustomException("Unauthorized")
+
+	###########dummy###################
 	self.user = self.data.get("sender")
 	if self.data.get("chat_history"):
 		await self.send_chat_history()
-	await map_channel(self)
 	await send_notification(self, self.user)
-	# await self.dummy()
+	###########dummy###################
 
 async def check_jwt(self, token):
 	print("Check authentication from json msg!!!")
@@ -103,7 +103,3 @@ async def check_jwt(self, token):
 		raise self.CustomException("Unauthorized")
 	else:
 		return token.user.username
-
-async def map_channel(self):
-	if not self.map_user_channel.get(self.user):
-		self.map_user_channel[self.user] = self.channel_name
