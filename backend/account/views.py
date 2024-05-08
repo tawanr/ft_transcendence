@@ -3,6 +3,8 @@ import json
 import time
 from uuid import uuid4
 from xml.dom.domreg import registered
+import requests
+from django.shortcuts import redirect
 
 import jwt
 from django.contrib.auth.models import User
@@ -213,3 +215,73 @@ def avatar_upload_view(request):
             {"success": True, "image_path": request.user.details.avatar.url}
         )
     return JsonResponse({"success": False, "errors": form.errors})
+
+auth_rul_42 = "https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-eb16615eeae12cb0c925ccb880a7b21c759357722b29dce6158a2c948c364dae&redirect_uri=http%3A%2F%2F127.0.0.1%3A8000%2Foauth2%2Flogin%2Fredirect&response_type=code"
+
+def authen42(request):
+    return redirect(auth_rul_42)
+
+def authen42_redirect(request):
+    code = request.GET.get('code')
+    # Get user info
+    user_info = exchange_code(code)
+    # create data info form
+    form_data = {
+        'username':user_info['first_name']
+        'password':NULL
+        'email':user_info['email']
+    }
+    # Check whether user is already register or not
+    user = (
+        User.objects.filter(username=form_data["username"])
+        .select_related("usertoken")
+        .first()
+    )
+
+    if not user:
+        # Create user account
+        User.objects.create_user(form_data, is_active=True)
+
+    if hasattr(user, "usertoken"):
+        user.usertoken.delete()
+
+    # Create JWT access token with expiration in 30 minutes
+    token_claims = {
+        "sub": user.id,
+        "name": user.username,
+        "iat": int(time.time()),
+        "exp": int(time.time()) + (60 * 30),
+    }
+    access_token = jwt.encode(token_claims, "secret", algorithm="HS256")
+
+    refresh_token = binascii.hexlify(uuid4().bytes).decode()
+    rtn = {
+        "access_token": access_token,
+    }
+    UserToken.objects.create(
+        user=user, access_token=access_token, refresh_token=refresh_token
+    )
+    response = JsonResponse(rtn)
+    response.set_cookie("refresh_token", refresh_token, httponly=True, secure=True)
+    return response
+
+def exchange_code(code):
+    print(f"show code in fn {code}")
+    data = {
+        'grant_type': 'authorization_code',
+        'client_id': 'u-s4t2ud-eb16615eeae12cb0c925ccb880a7b21c759357722b29dce6158a2c948c364dae',
+        'client_secret': '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',
+        'code': code,
+        'redirect_uri': 'http://127.0.0.1:8000/account/redirect42/',
+    }
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+    response = requests.request("POST", "https://api.intra.42.fr/oauth/token", headers=headers, data=data)
+    credentials = response.json()
+    access_token = credentials['access_token']
+    response = requests.get("https://api.intra.42.fr/v2/me", headers={
+        'Authorization': 'Bearer %s' % access_token
+    })
+    raw_info = response.json()
+    return (raw_info)
