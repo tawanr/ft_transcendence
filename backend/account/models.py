@@ -54,7 +54,9 @@ class UserDetails(models.Model):
         return {
             "playerName": self.user.username,
             "playerId": self.user.id,
-            "avatar": self.avatar.url if self.avatar else "",
+            "avatar": self.avatar.url
+            if self.avatar
+            else "/uploads/avatars/42_Logo.png",
             "status": status,
         }
 

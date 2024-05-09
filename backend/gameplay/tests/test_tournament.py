@@ -44,6 +44,7 @@ class TestTournament(TestCase):
             content_type="application/json",
             HTTP_AUTHORIZATION=f"Bearer {token}",
         )
+        self.assertEqual(response.status_code, 201)
         self.assertTrue(response.json().get("success"))
         self.assertEqual(Tournament.objects.count(), 2)
         tournament = Tournament.objects.last()
@@ -130,6 +131,7 @@ class TestTournament(TestCase):
         response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
         expected = {
             "id": self.tournament.id,
+            "size": 4,
             "bracket": [
                 {
                     "finished": False,

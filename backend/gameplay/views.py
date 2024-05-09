@@ -55,7 +55,8 @@ def user_tournament(request):
 
             if tournament:
                 return JsonResponse(
-                    {"success": True, "message": "Tournament created successfully"}
+                    {"success": True, "message": "Tournament created successfully"},
+                    status=201,
                 )
         except Exception as e:
             return JsonResponse(
@@ -83,7 +84,12 @@ def user_tournament(request):
         bracket = async_to_sync(tournament.bracket)()
         players = async_to_sync(tournament.get_players)()
         return JsonResponse(
-            {"id": tournament.id, "bracket": bracket, "players": players}
+            {
+                "id": tournament.id,
+                "size": tournament.size,
+                "bracket": bracket,
+                "players": players,
+            }
         )
 
 
@@ -115,7 +121,12 @@ def tournament_detail(request, tournament_id: int):
         bracket = async_to_sync(tournament.bracket)()
         players = async_to_sync(tournament.get_players)()
         return JsonResponse(
-            {"id": tournament.id, "bracket": bracket, "players": players}
+            {
+                "id": tournament.id,
+                "size": tournament.size,
+                "bracket": bracket,
+                "players": players,
+            }
         )
 
 
