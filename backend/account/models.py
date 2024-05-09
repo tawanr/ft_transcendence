@@ -3,6 +3,7 @@ import time
 import jwt
 from django.conf import settings
 from django.db import models
+from gameplay.models import GamePlayer
 
 
 class UserToken(models.Model):
@@ -44,6 +45,18 @@ class UserDetails(models.Model):
     )
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
     friends = models.ManyToManyField("self")
+    is_connected = models.BooleanField(default=False)
+
+    def serialize(self) -> dict:
+        status = "online" if self.is_connected else "offline"
+        if GamePlayer.objects.filter(player=self.user, is_active=True).exists():
+            status = "ingame"
+        return {
+            "playerName": self.user.username,
+            "playerId": self.user.id,
+            "avatar": self.avatar.url if self.avatar else "",
+            "status": status,
+        }
 
 
 class UserFriendInvite(models.Model):

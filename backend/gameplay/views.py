@@ -85,7 +85,8 @@ def tournament_detail(request, tournament_id: int):
         )
     elif request.method == "GET":
         bracket = async_to_sync(tournament.bracket)()
-        return JsonResponse({"bracket": bracket})
+        players = async_to_sync(tournament.get_players)()
+        return JsonResponse({"bracket": bracket, "players": players})
 
 
 @require_POST

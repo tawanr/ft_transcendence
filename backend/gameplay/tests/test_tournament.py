@@ -1,10 +1,10 @@
 from account.services import generate_user_token
-from asgiref.sync import async_to_sync, sync_to_async
+from asgiref.sync import async_to_sync
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from gameplay.models import GamePlayer, GameRoom, Tournament, TournamentPlayer
+from gameplay.models import GamePlayer, GameRoom, Tournament
 
 
 class TestTournament(TestCase):
@@ -109,7 +109,7 @@ class TestTournament(TestCase):
         self.assertTrue(response.json().get("success"))
         self.assertEqual(self.tournament.players.count(), 1)
 
-    def test_bracket(self):
+    def test_tournament_detail(self):
         async_to_sync(self.add_players)(count=4)
         async_to_sync(self.tournament.set_host)(self.users[0])
         async_to_sync(self.tournament.start_tournament)()
@@ -126,13 +126,13 @@ class TestTournament(TestCase):
                             "id": self.users[0].pk,
                             "name": "test1",
                             "score": 0,
-                            "is_winner": False,
+                            "isWinner": False,
                         },
                         {
                             "id": self.users[2].pk,
                             "name": "test3",
                             "score": 0,
-                            "is_winner": False,
+                            "isWinner": False,
                         },
                     ],
                 },
@@ -143,18 +143,44 @@ class TestTournament(TestCase):
                             "id": self.users[1].pk,
                             "name": "test2",
                             "score": 0,
-                            "is_winner": False,
+                            "isWinner": False,
                         },
                         {
                             "id": self.users[3].pk,
                             "name": "test4",
                             "score": 0,
-                            "is_winner": False,
+                            "isWinner": False,
                         },
                     ],
                 },
                 {},
-            ]
+            ],
+            "players": [
+                {
+                    "playerName": "test1",
+                    "playerId": self.users[0].pk,
+                    "avatar": "",
+                    "status": "ingame",
+                },
+                {
+                    "playerName": "test2",
+                    "playerId": self.users[1].pk,
+                    "avatar": "",
+                    "status": "ingame",
+                },
+                {
+                    "playerName": "test3",
+                    "playerId": self.users[2].pk,
+                    "avatar": "",
+                    "status": "ingame",
+                },
+                {
+                    "playerName": "test4",
+                    "playerId": self.users[3].pk,
+                    "avatar": "",
+                    "status": "ingame",
+                },
+            ],
         }
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), expected)
@@ -182,13 +208,13 @@ class TestTournament(TestCase):
                         "id": self.users[0].pk,
                         "name": "test1",
                         "score": 0,
-                        "is_winner": False,
+                        "isWinner": False,
                     },
                     {
                         "id": self.users[2].pk,
                         "name": "test3",
                         "score": 0,
-                        "is_winner": False,
+                        "isWinner": False,
                     },
                 ],
             },
@@ -199,7 +225,7 @@ class TestTournament(TestCase):
                         "id": self.users[1].pk,
                         "name": "test2",
                         "score": 0,
-                        "is_winner": True,
+                        "isWinner": True,
                     },
                     {},
                 ],

@@ -141,7 +141,7 @@ class Tournament(models.Model):
                         "id": player["player__id"],
                         "name": player["name"],
                         "score": player["score"],
-                        "is_winner": player["is_winner"],
+                        "isWinner": player["is_winner"],
                     }
                     for player in players
                 ],
@@ -162,6 +162,12 @@ class Tournament(models.Model):
         if level:
             qs = qs.filter(level=level)
         return [game async for game in qs]
+
+    async def get_players(self) -> dict:
+        players = []
+        async for player in self.players.select_related("details").all():
+            players.append(await sync_to_async(player.details.serialize)())
+        return players
 
     async def check_round_end(self) -> bool:
         qs_games = GameRoom.objects.filter(tournament=self, is_finished=False)
