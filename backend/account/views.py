@@ -1,13 +1,6 @@
-import binascii
 import json
-import time
-from uuid import uuid4
-from xml.dom.domreg import registered
 
-import jwt
 from django.contrib.auth.models import User
-from django.db.models import Case, Count, F, OuterRef, Q, Subquery, Value, When
-from django.db.models.lookups import Exact
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -17,7 +10,7 @@ from gameplay.models import GameRoom
 
 from account.forms import RegisterForm, UploadAvatarForm
 from account.models import UserFriendInvite, UserToken
-from account.services import handle_upload_avatar
+from account.services import generate_user_token, handle_upload_avatar
 from backend.decorators import login_required_401
 
 
@@ -53,32 +46,21 @@ def login_view(request):
     )
     if not user:
         return JsonResponse(
-            {"success": False, "errors": {"username": "Username does not exist"}}
+            {"success": False, "errors": {"username": "Username does not exist"}},
+            status=401,
         )
     if not user.check_password(payload["password"]):
         return JsonResponse(
-            {"success": False, "errors": {"password": "Invalid password"}}
+            {"success": False, "errors": {"password": "Invalid password"}},
+            status=401,
         )
 
     if hasattr(user, "usertoken"):
         user.usertoken.delete()
 
     # Create JWT access token with expiration in 30 minutes
-    token_claims = {
-        "sub": user.id,
-        "name": user.username,
-        "iat": int(time.time()),
-        "exp": int(time.time()) + (60 * 30),
-    }
-    access_token = jwt.encode(token_claims, "secret", algorithm="HS256")
-
-    refresh_token = binascii.hexlify(uuid4().bytes).decode()
-    rtn = {
-        "access_token": access_token,
-    }
-    UserToken.objects.create(
-        user=user, access_token=access_token, refresh_token=refresh_token
-    )
+    access_token, refresh_token = generate_user_token(user)
+    rtn = {"access_token": access_token}
     response = JsonResponse(rtn)
     response.set_cookie("refresh_token", refresh_token, httponly=True, secure=True)
     return response

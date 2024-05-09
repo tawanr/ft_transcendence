@@ -1,7 +1,10 @@
+from account.services import generate_user_token
+from asgiref.sync import async_to_sync, sync_to_async
 from django.contrib.auth.models import User
 from django.test import TestCase
+from django.urls import reverse
 
-from gameplay.models import GamePlayer, GameRoom, Tournament
+from gameplay.models import GamePlayer, GameRoom, Tournament, TournamentPlayer
 
 
 class TestTournament(TestCase):
@@ -22,14 +25,139 @@ class TestTournament(TestCase):
             count -= 1
             await self.tournament.add_player(user)
 
-    async def test_add_player(self):
-        self.assertFalse(await self.tournament.is_ready)
-        await self.tournament.add_player(self.users[0])
-        await self.tournament.add_player(self.users[1])
-        self.assertFalse(await self.tournament.is_ready)
-        await self.tournament.add_player(self.users[2])
-        self.assertTrue(await self.tournament.is_ready)
-        self.assertEqual(await self.tournament.players.acount(), 3)
+    def test_create_tournament(self):
+        url = reverse("create_tournament")
+        self.assertEqual(Tournament.objects.count(), 1)
+        payload = {"game_type": "pong"}
+
+        response = self.client.post(
+            url,
+            payload,
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 401)
+
+        token, _ = generate_user_token(self.users[0])
+        response = self.client.post(
+            url,
+            payload,
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        self.assertTrue(response.json().get("success"))
+        self.assertEqual(Tournament.objects.count(), 2)
+        tournament = Tournament.objects.last()
+        self.assertEqual(tournament.players.count(), 1)
+        self.assertEqual(async_to_sync(tournament.get_host)(), self.users[0])
+
+    def test_start_tournament(self):
+        url = reverse(
+            "tournament_detail", kwargs={"tournament_id": self.tournament.id + 1}
+        )
+        self.assertEqual(Tournament.objects.count(), 1)
+
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, 401)
+
+        token, _ = generate_user_token(self.users[1])
+        response = self.client.post(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, 404)
+
+        url = reverse("tournament_detail", kwargs={"tournament_id": self.tournament.id})
+        async_to_sync(self.tournament.set_host)(self.users[0])
+        response = self.client.post(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, 401)
+
+        token, _ = generate_user_token(self.users[0])
+        response = self.client.post(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, 400)
+        async_to_sync(self.tournament.add_player)(self.users[1])
+        async_to_sync(self.tournament.add_player)(self.users[2])
+        response = self.client.post(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Tournament.objects.filter(is_playing=True).count(), 1)
+        self.assertEqual(GameRoom.objects.filter(tournament=self.tournament).count(), 2)
+
+    def test_join_tournament(self):
+        url = reverse("join_tournament", kwargs={"tournament_id": self.tournament.id})
+        token, _ = generate_user_token(self.users[0])
+        response = self.client.post(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.post(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, 400)
+
+    def test_add_player(self):
+        url = reverse("add_player_to_tournament")
+        self.assertEqual(self.tournament.players.count(), 0)
+        payload = {"username": self.users[0].username}
+
+        response = self.client.post(
+            url,
+            payload,
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 401)
+
+        token, _ = generate_user_token(self.users[0])
+        response = self.client.post(
+            url,
+            payload,
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+        self.assertTrue(response.json().get("success"))
+        self.assertEqual(self.tournament.players.count(), 1)
+
+    def test_bracket(self):
+        async_to_sync(self.add_players)(count=4)
+        async_to_sync(self.tournament.set_host)(self.users[0])
+        async_to_sync(self.tournament.start_tournament)()
+
+        url = reverse("tournament_detail", kwargs={"tournament_id": self.tournament.id})
+        token, _ = generate_user_token(self.users[0])
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        expected = {
+            "bracket": [
+                {
+                    "finished": False,
+                    "players": [
+                        {
+                            "id": self.users[0].pk,
+                            "name": "test1",
+                            "score": 0,
+                            "is_winner": False,
+                        },
+                        {
+                            "id": self.users[2].pk,
+                            "name": "test3",
+                            "score": 0,
+                            "is_winner": False,
+                        },
+                    ],
+                },
+                {
+                    "finished": False,
+                    "players": [
+                        {
+                            "id": self.users[1].pk,
+                            "name": "test2",
+                            "score": 0,
+                            "is_winner": False,
+                        },
+                        {
+                            "id": self.users[3].pk,
+                            "name": "test4",
+                            "score": 0,
+                            "is_winner": False,
+                        },
+                    ],
+                },
+                {},
+            ]
+        }
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), expected)
 
     async def test_play_tournament(self):
         self.assertFalse(await self.tournament.start_tournament())

@@ -4,10 +4,9 @@ import string
 import uuid
 
 from asgiref.sync import sync_to_async
+from chat.models import User
 from django.contrib.auth import get_user_model
 from django.db import models
-
-from chat.models import User
 
 
 class TournamentPlayer(models.Model):
@@ -15,6 +14,7 @@ class TournamentPlayer(models.Model):
     tournament = models.ForeignKey("Tournament", on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     is_winner = models.BooleanField(default=False)
+    is_host = models.BooleanField(default=False)
     date_added = models.DateTimeField(auto_now_add=True, null=True)
 
     class Meta:
@@ -24,15 +24,52 @@ class TournamentPlayer(models.Model):
 class Tournament(models.Model):
     game_type = models.CharField(max_length=100, default="pong")
     players = models.ManyToManyField("auth.User", through=TournamentPlayer)
-    is_active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    is_playing = models.BooleanField(default=False)
     is_finished = models.BooleanField(default=False)
     size = models.IntegerField(default=4)
 
-    async def add_player(self, player):
+    async def set_host(self, user: User):
+        if not user:
+            if not self.players.through.objects.filter(
+                is_host=True, tournament=self
+            ).aexists():
+                user = await self.players.afirst()
+            else:
+                return
+        if not user:
+            return
+        await self.players.through.objects.filter(tournament=self).aupdate(
+            is_host=False
+        )
+        if not await self.players.through.objects.filter(player=user).aexists():
+            await self.add_player(user, is_host=True)
+        else:
+            await self.players.through.objects.filter(
+                player=user, tournament=self
+            ).aupdate(is_host=True)
+
+    async def get_host(self) -> User:
+        host = (
+            await self.players.through.objects.filter(tournament=self, is_host=True)
+            .select_related("player")
+            .afirst()
+        )
+        return host.player
+
+    async def add_player(self, player, is_host=False):
         await sync_to_async(self.players.add)(player)
         if await self.players.acount() > self.size:
             self.size *= 2
             await self.asave()
+        if tour_player := await self.players.through.objects.filter(
+            player=player,
+            tournament=self,
+        ).afirst():
+            if is_host:
+                tour_player.is_host = True
+                await tour_player.asave()
+            return tour_player
 
     @property
     async def is_ready(self):
@@ -54,7 +91,7 @@ class Tournament(models.Model):
         if not await self.is_ready:
             return False
         # Check if there are existing games
-        self.is_active = True
+        self.is_playing = True
         await self.asave()
         await self._create_round_games(level=1)
         return True
@@ -65,7 +102,8 @@ class Tournament(models.Model):
         players = [
             player.player
             async for player in self.players.through.objects.filter(
-                is_active=True
+                is_active=True,
+                tournament=self,
             ).select_related("player")
         ]
         for idx, player in enumerate(players):
@@ -135,10 +173,17 @@ class Tournament(models.Model):
         if not await self.check_round_end():
             raise Exception("Round not finished")
         current_round = await self.get_current_round()
-        if await self.players.through.objects.filter(is_active=True).acount() == 1:
-            await self.players.through.objects.filter(is_active=True).aupdate(
-                is_winner=True
-            )
+        if (
+            await self.players.through.objects.filter(
+                is_active=True,
+                tournament=self,
+            ).acount()
+            == 1
+        ):
+            await self.players.through.objects.filter(
+                is_active=True,
+                tournament=self,
+            ).aupdate(is_winner=True)
             self.is_finished = True
             self.is_active = False
             await self.asave()
@@ -290,7 +335,9 @@ class GameRoom(models.Model):
         self.is_active = False
         self.is_finished = True
         winner = await self.players.exclude(gameplayer__session_id=player_id).afirst()
-        await self.players.through.objects.filter(player=winner).aupdate(is_winner=True)
+        await self.players.through.objects.filter(
+            player=winner, game_room=self
+        ).aupdate(is_winner=True)
         await self._deactivate_tournament_player(
             await self.players.exclude(id=winner.id).afirst()
         )
@@ -305,7 +352,9 @@ class GameRoom(models.Model):
         self.is_active = False
         self.is_finished = True
         winner = await self.players.filter(gameplayer__session_id=player_id).afirst()
-        await self.players.through.objects.filter(player=winner).aupdate(is_winner=True)
+        await self.players.through.objects.filter(
+            player=winner, game_room=self
+        ).aupdate(is_winner=True)
         await self._deactivate_tournament_player(
             await self.players.exclude(id=winner.id).afirst()
         )
@@ -318,9 +367,9 @@ class GameRoom(models.Model):
         tournament = await Tournament.objects.aget(gameroom=self)
         if not tournament:
             return
-        await tournament.players.through.objects.filter(player=user).aupdate(
-            is_active=False
-        )
+        await tournament.players.through.objects.filter(
+            player=user, tournament=tournament
+        ).aupdate(is_active=False)
 
     def get_player_by_num(self, player_number) -> GamePlayer:
         return GamePlayer.objects.filter(

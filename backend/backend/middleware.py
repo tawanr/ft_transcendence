@@ -1,6 +1,5 @@
-from django.contrib.auth.models import User
-
 from account.models import UserToken
+from django.contrib.auth.models import User
 
 
 class DisableCSRFMiddleware(object):
