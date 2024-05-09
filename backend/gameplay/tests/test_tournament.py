@@ -26,7 +26,7 @@ class TestTournament(TestCase):
             await self.tournament.add_player(user)
 
     def test_create_tournament(self):
-        url = reverse("create_tournament")
+        url = reverse("user_tournament")
         self.assertEqual(Tournament.objects.count(), 1)
         payload = {"game_type": "pong"}
 
@@ -49,6 +49,17 @@ class TestTournament(TestCase):
         tournament = Tournament.objects.last()
         self.assertEqual(tournament.players.count(), 1)
         self.assertEqual(async_to_sync(tournament.get_host)(), self.users[0])
+
+    def test_user_tournament(self):
+        url = reverse("user_tournament")
+        token, _ = generate_user_token(self.users[0])
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, 404)
+
+        async_to_sync(self.tournament.add_player)(self.users[0])
+        response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["id"], self.tournament.id)
 
     def test_start_tournament(self):
         url = reverse(
@@ -118,6 +129,7 @@ class TestTournament(TestCase):
         token, _ = generate_user_token(self.users[0])
         response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
         expected = {
+            "id": self.tournament.id,
             "bracket": [
                 {
                     "finished": False,

@@ -1,8 +1,8 @@
 import json
-import re
 
 from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
+from django.core.paginator import Paginator
 from django.http import Http404, JsonResponse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
@@ -14,48 +14,76 @@ from gameplay.models import Tournament, TournamentPlayer
 User = get_user_model()
 
 
-@require_POST
+@require_http_methods(["GET", "POST"])
 @login_required_401
-def create_tournament(request):
-    if not hasattr(request.user, "usertoken"):
-        return JsonResponse(
-            {"success": False, "message": "Unauthorized, failed to create tournament"}
-        )
-    try:
-        payload = json.loads(request.body)
-        game_type = payload.get("game_type")
-
-        if not game_type:
+def user_tournament(request):
+    if request.method == "POST":
+        if not hasattr(request.user, "usertoken"):
             return JsonResponse(
                 {
                     "success": False,
-                    "message": "Failed to create tournament, invalid game_type",
+                    "message": "Unauthorized, failed to create tournament",
                 }
             )
+        try:
+            payload = json.loads(request.body)
+            game_type = payload.get("game_type")
 
-        # Create a new tournament object
-        if TournamentPlayer.objects.filter(
-            tournament__is_active=True,
-            player=request.user,
-        ).exists():
+            if not game_type:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Failed to create tournament, invalid game_type",
+                    }
+                )
+
+            # Create a new tournament object
+            if TournamentPlayer.objects.filter(
+                tournament__is_active=True,
+                player=request.user,
+            ).exists():
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": f"User already in a tournament: {game_type}",
+                    },
+                    status=400,
+                )
+
+            tournament = Tournament.objects.create(game_type=game_type)
+            async_to_sync(tournament.set_host)(request.user)
+
+            if tournament:
+                return JsonResponse(
+                    {"success": True, "message": "Tournament created successfully"}
+                )
+        except Exception as e:
+            return JsonResponse(
+                {"success": False, "message": f"An error occurred: {str(e)}"}
+            )
+    elif request.method == "GET":
+        player = (
+            TournamentPlayer.objects.filter(
+                player=request.user,
+                is_active=True,
+                tournament__is_active=True,
+            )
+            .select_related("tournament")
+            .first()
+        )
+        if not player:
             return JsonResponse(
                 {
                     "success": False,
-                    "message": f"User already in a tournament: {game_type}",
+                    "message": "User is not in any active tournament",
                 },
-                status=400,
+                status=404,
             )
-
-        tournament = Tournament.objects.create(game_type=game_type)
-        async_to_sync(tournament.set_host)(request.user)
-
-        if tournament:
-            return JsonResponse(
-                {"success": True, "message": "Tournament created successfully"}
-            )
-    except Exception as e:
+        tournament = player.tournament
+        bracket = async_to_sync(tournament.bracket)()
+        players = async_to_sync(tournament.get_players)()
         return JsonResponse(
-            {"success": False, "message": f"An error occurred: {str(e)}"}
+            {"id": tournament.id, "bracket": bracket, "players": players}
         )
 
 
@@ -86,7 +114,9 @@ def tournament_detail(request, tournament_id: int):
     elif request.method == "GET":
         bracket = async_to_sync(tournament.bracket)()
         players = async_to_sync(tournament.get_players)()
-        return JsonResponse({"bracket": bracket, "players": players})
+        return JsonResponse(
+            {"id": tournament.id, "bracket": bracket, "players": players}
+        )
 
 
 @require_POST
