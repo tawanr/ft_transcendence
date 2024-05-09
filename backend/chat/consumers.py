@@ -60,10 +60,10 @@ class UserConsumer(AsyncWebsocketConsumer):
 
     def is_check_req(self, req_name):
         req = {}
-        req['chat_history'] = {'chat_history'}
+        req['chat_history'] = {'chat_history', 'authorization'}
         req['block'] = {'sender', 'recipient', 'authorization', 'block', 'chat_history', 'connect'}
         req['unblock'] = {'sender', 'recipient', 'authorization', 'unblock', 'chat_history', 'connect'}
-        req['msg'] = {'message', 'sender', 'recipient', 'authorization', 'chat_history', 'connect'}
+        req['msg'] = {'message', 'sender', 'recipient', 'authorization'}
         req['invite'] = {'sender', 'recipient', 'invite_user','authorization', 'invitation', 'chat_history', 'connect'}
         req['profile'] = {'sender', 'recipient', 'authorization', 'profile', 'chat_history', 'connect'}
 
@@ -219,6 +219,7 @@ class UserConsumer(AsyncWebsocketConsumer):
         self.sender = event['sender']
 
         if not au.is_user_active_in_room(self.room_name, self.user):
+            print(f"user is: {self.user}")
             await send_notification(self, self.user)
             return
 
@@ -233,7 +234,8 @@ class UserConsumer(AsyncWebsocketConsumer):
         async for chat in chat_obj_all:
             time = chat.timestamp
             time = timezone.localtime(time)
-            time = time.strftime("%Y-%m-%d %H.%M.%S")
+            # time = time.strftime("%Y-%m-%d %H.%M.%S")
+            time = time.strftime("%Y-%m-%d")
 
             self.chats_data.append({
                 'senderName': chat.sender,
@@ -242,10 +244,13 @@ class UserConsumer(AsyncWebsocketConsumer):
                 'isSent': chat.sender == self.sender,
             })
 
-        print_chats_data(self.chats_data)
+        # print_chats_data(self.chats_data)
 
         await self.send(text_data=json.dumps({
+            "type" : "message",
             "chats_data" : self.chats_data,
+            "message" : event['message'],
+            "sender" : self.sender
         }))
 
     async def send_notification(self, event):
@@ -261,6 +266,7 @@ class UserConsumer(AsyncWebsocketConsumer):
             au.remove_user_from_room(self.room_name, self.user)
             return
         await self.send(text_data=json.dumps({
+            "type" : "chat_history",
             "chats_data" : await display_chat_history(self),
         }))
         au.add_user_to_room(self.room_name, self.user)

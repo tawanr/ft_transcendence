@@ -20,6 +20,7 @@ async def send_notification(self, recipient):
 	noti_count = noti.notification
 
 	if noti_count > 0:
+		print("In condition to send noti")
 		await self.channel_layer.group_send(
 			self.room_group_name,
 			{

@@ -32,7 +32,8 @@ async def display_chat_history(self):
 	async for chat in chat_objs:
 		time = chat.timestamp
 		time = timezone.localtime(time)
-		time = time.strftime("%Y-%m-%d %H.%M.%S")
+		# time = time.strftime("%Y-%m-%d %H.%M.%S")
+		time = time.strftime("%Y-%m-%d")
 		chats_data.append({
 			'senderName': chat.sender,
 			'message': chat.content,
