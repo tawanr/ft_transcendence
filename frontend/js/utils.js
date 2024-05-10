@@ -8,7 +8,7 @@ export async function initUser() {
      */
     const token = getUserToken();
     const username = await fetchUserData(token).catch((error) => {
-        return fetchUserData(localStorage.getItem("token"));
+        return fetchUserData(token);
     });
     if (username) {
         localStorage["username"] = username;

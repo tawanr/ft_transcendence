@@ -33,9 +33,16 @@ class Bracket extends HTMLElement {
     }
 
     set bracket(data) {
+        const currentLen = this._bracket.length;
         this._bracket = data.bracket;
         this.tournamentSize = data.size;
-        this.render(this.html);
+        if (currentLen !== data.bracket.length) {
+            this.render(this.html);
+        }
+        const games = this.shadow.querySelectorAll(".bracketGame");
+        for (let i = 0; i < this._bracket.length; i++) {
+            games[i].players = this._bracket[i].players;
+        }
     }
 
     /**
