@@ -48,7 +48,7 @@ const urlRoutes = {
         description: "",
         script: JS_DIR + "tournament.js",
         navLink: "nav-btn-tour",
-        cacheBust: false,
+        cacheBust: true,
     },
     "/login": {
         template: TEMPLATE_DIR + "login.html",

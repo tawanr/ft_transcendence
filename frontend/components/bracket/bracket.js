@@ -1,110 +1,64 @@
 import { fetchHTML } from "../../js/utils.js";
 import "../bracket-game/bracket-game.js";
 
+/**
+ * @typedef {Object} BracketPlayer
+ * @property {number} id
+ * @property {string} name
+ * @property {number} score
+ * @property {boolean} isWinner
+ */
+
+/**
+ * @typedef {Object} BracketGame
+ * @property {boolean} finished
+ * @property {BracketPlayer[]} players
+ */
+
 class Bracket extends HTMLElement {
+    /**
+     * Creates an instance of Bracket.
+     *
+     * @constructor
+     */
     constructor() {
         super();
         this.friendAddBtn = false;
         this.shadow = this.attachShadow({ mode: "closed" });
         fetchHTML("/components/bracket/bracket.html").then((html) => {
+            this.html = html;
             this.render(html);
         });
         this.cardTitle = this.getAttribute("title");
     }
 
-    connectedCallback() {
-        this.tournamentSize = 16;
-        this.bracket = [
-            {
-                finished: true,
-                players: [
-                    {
-                        id: 1,
-                        name: "AAA",
-                        score: 0,
-                        isWinner: false,
-                    },
-                    {
-                        id: 2,
-                        name: "BBB",
-                        score: 5,
-                        isWinner: true,
-                    },
-                ],
-            },
-            {
-                finished: true,
-                players: [
-                    {
-                        id: 3,
-                        name: "CCC",
-                        score: 5,
-                        isWinner: true,
-                    },
-                    {
-                        id: 4,
-                        name: "DDD",
-                        score: 3,
-                        isWinner: false,
-                    },
-                ],
-            },
-            {
-                finished: true,
-                players: [
-                    {
-                        id: 1,
-                        name: "AAA",
-                        score: 0,
-                        isWinner: false,
-                    },
-                    {
-                        id: 2,
-                        name: "BBB",
-                        score: 5,
-                        isWinner: true,
-                    },
-                ],
-            },
-            {
-                finished: true,
-                players: [
-                    {
-                        id: 3,
-                        name: "CCC",
-                        score: 5,
-                        isWinner: true,
-                    },
-                    {
-                        id: 4,
-                        name: "DDD",
-                        score: 3,
-                        isWinner: false,
-                    },
-                ],
-            },
-            {
-                finished: false,
-                players: [
-                    {
-                        id: 2,
-                        name: "BBB",
-                        score: 0,
-                        isWinner: false,
-                    },
-                    {
-                        id: 3,
-                        name: "CCC",
-                        score: 0,
-                        isWinner: false,
-                    },
-                ],
-            },
-            {},
-            {},
-        ];
+    set bracket(data) {
+        this._bracket = data.bracket;
+        this.tournamentSize = data.size;
+        this.render(this.html);
     }
 
+    /**
+     * Bracket data
+     *
+     * @type {BracketGame[]}
+     */
+    get bracket() {
+        return this._bracket;
+    }
+
+    connectedCallback() {
+        /** @type {number} */
+        this.tournamentSize = 0;
+        /** @type {BracketGame[]} */
+        this._bracket = [];
+    }
+
+    /**
+     * Render component
+     *
+     * @param {*} html
+     */
     render(html) {
         this.shadow.innerHTML = html;
 

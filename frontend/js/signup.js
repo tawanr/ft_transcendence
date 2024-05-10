@@ -16,7 +16,7 @@ signupForm.addEventListener("submit", (e) => {
 });
 
 function signUpAccount(username, password) {
-    const api_url = constants.BACKEND_HOST + "/account/register/"
+    const api_url = constants.BACKEND_HOST + "/account/register/";
     // TODO: Error handling
     fetch(api_url, {
         method: "POST",
@@ -27,13 +27,11 @@ function signUpAccount(username, password) {
             username,
             password,
         }),
-    })
-        .then((response) => {
-            if (response.status === 200) {
-                console.log("Account created successfully");
-                history.pushState({}, "", "/login");
-                window.dispatchEvent(new PopStateEvent("popstate"));
-            }
-            return response.json()
-        })
+    }).then((response) => {
+        if (response.status === 200) {
+            history.pushState({}, "", "/login");
+            window.dispatchEvent(new PopStateEvent("popstate"));
+        }
+        return response.json();
+    });
 }

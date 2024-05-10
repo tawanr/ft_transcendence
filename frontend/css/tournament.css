@@ -1,14 +1,15 @@
 .tournamentChat {
-    flex-grow: 1;
+    flex-grow: 2;
     flex-basis: 500px;
 }
 
 .tournamentList {
-    flex-basis: 400px;
+    flex-grow: 1;
+    min-width: 400px;
 }
 
 .tournamentBracket {
-    max-height: 80vh;
+    max-height: max(600px, 80vh);
 }
 
 .bracketContent {

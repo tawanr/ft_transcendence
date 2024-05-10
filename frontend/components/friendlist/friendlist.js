@@ -6,33 +6,23 @@ class FriendList extends HTMLElement {
         this.friendAddBtn = false;
         this.shadow = this.attachShadow({ mode: "closed" });
         fetchHTML("/components/friendlist/friendlist.html").then((html) => {
+            this.html = html;
             this.render(html);
         });
         this.cardTitle = this.getAttribute("title");
     }
 
-    connectedCallback() {
-        this.friends = [
-            {
-                playerName: "AAA",
-                playerId: 123,
-                avatar: "/uploads/avatars/42_Logo.png",
-                status: "offline",
-            },
-            {
-                playerName: "def",
-                playerId: 123,
-                avatar: "/uploads/avatars/42_Logo.png",
-                status: "online",
-            },
-            {
-                playerName: "zzz",
-                playerId: 123,
-                avatar: "/uploads/avatars/42_Logo.png",
-                status: "ingame",
-            },
-        ];
+    get friends() {
+        return this._friends;
+    }
 
+    set friends(data) {
+        this._friends = data;
+        this.render(this.html);
+    }
+
+    connectedCallback() {
+        this._friends = [];
         this.friendDelBtn = this.hasAttribute("friend-del-btn");
         this.friendStatusBadge = this.hasAttribute("show-status");
     }
@@ -51,7 +41,7 @@ class FriendList extends HTMLElement {
         this.shadow.innerHTML = html;
 
         const friendList = this.shadow.getElementById("friendList");
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < this.friends.length; i++) {
             const friend = this.friends[i % 3];
             const friendItem = document.createElement("li");
             friendItem.classList.add("friendlistItem");
@@ -67,7 +57,7 @@ class FriendList extends HTMLElement {
                         <span class="date fs-5">${friend.playerName}</span>
                     </div>
                 </div>
-                <div class="d-flex flex-row align-items-center friendStatus me-3">
+                <div class="d-flex flex-row align-items-center text-start friendStatus me-3">
                     ${this.getStatusBadge(friend)}
                 </div>
                 <div class="d-flex flex-column justify-content-center">

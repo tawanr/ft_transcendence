@@ -1,0 +1,7 @@
+* {
+    --row-height: min(80vh, 800px);
+}
+
+.cardRow {
+    height: var(--row-height);
+}

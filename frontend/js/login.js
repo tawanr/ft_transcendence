@@ -29,7 +29,6 @@ async function signInAccount(username, password) {
     })
         .then((response) => {
             if (response.status === 200) {
-                console.log("Account logged in successfully");
                 history.pushState({}, "", "/");
                 window.dispatchEvent(new PopStateEvent("popstate"));
             }

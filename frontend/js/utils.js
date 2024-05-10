@@ -28,11 +28,13 @@ export function updateUserNav() {
     const username = localStorage.getItem("username");
     const userAvatar = localStorage.getItem("userAvatar");
     const navAuth = document.getElementById("navAuth");
+    const navTour = document.getElementById("navTour");
     const navLoggedIn = document.getElementById("navLoggedIn");
     if (!token || !username) {
         localStorage.removeItem("userAvatar");
         navAuth.classList.remove("d-none");
         navLoggedIn.classList.add("d-none");
+        navTour.classList.add("d-none");
     } else {
         navAuth.classList.add("d-none");
         const navUserMenu = document.getElementById("navUserDropdown");
@@ -45,6 +47,7 @@ export function updateUserNav() {
         <div class="flex-col h-100 my-auto mx-2">${username}</div>
         `;
         navLoggedIn.classList.remove("d-none");
+        navTour.classList.remove("d-none");
     }
 }
 
@@ -92,6 +95,14 @@ export async function refreshUserToken() {
      * with cookies retrieved previously.
      */
     const api_url = constants.BACKEND_HOST + "/account/refresh/";
+    const token = localStorage.getItem("token");
+    if (!token) {
+        return false;
+    }
+    const expire = parseJwt(token).exp;
+    if (expire - 5 > Date.now() / 1000) {
+        return false;
+    }
     await fetch(api_url, {
         method: "POST",
         credentials: "include",
@@ -145,4 +156,30 @@ export function fetchHTML(filePath) {
         .then((data) => {
             return baseStyle + data;
         });
+}
+
+export function parseJwt(token) {
+    var base64Url = token.split(".")[1];
+    var base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    var jsonPayload = decodeURIComponent(
+        window
+            .atob(base64)
+            .split("")
+            .map(function (c) {
+                return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+            })
+            .join("")
+    );
+
+    return JSON.parse(jsonPayload);
+}
+
+export function getUserToken() {
+    refreshUserToken();
+    const token = localStorage.getItem("token");
+    if (!token) {
+        window.location.replace("/login");
+        return;
+    }
+    return token;
 }

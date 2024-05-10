@@ -13,11 +13,8 @@ logoutBtn.addEventListener("click", async (e) => {
             Authorization: "Bearer " + localStorage.getItem("token"),
         },
     }).then((response) => {
-        if (response.status === 200) {
-            console.log("Logged out successfully");
-        } else {
+        if (response.status !== 200) {
             console.error("Failed to log out", response.json());
-            return;
         }
     });
     localStorage.removeItem("token");
