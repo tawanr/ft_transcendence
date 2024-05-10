@@ -7,7 +7,7 @@
         <div class="tournamentInput col-4">
             <input
                 type="text"
-                id="tournamentName"
+                id="tournamentId"
                 class="col-5 form-control"
                 placeholder="Tournament ID"
             />
@@ -21,7 +21,9 @@
     <div class="d-flex flex-row w-100">
         <div class="card tournamentBracket w-100">
             <div class="card-header text-center">
-                <span class="card-title fw-bold">Tournament Bracket</span>
+                <span class="card-title fw-bold" id="bracketHeader"
+                    >Tournament Bracket</span
+                >
             </div>
             <div class="card-body bracketContent">
                 <bracket-component></bracket-component>

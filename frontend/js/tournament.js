@@ -38,6 +38,8 @@ async function getTournamentDetails() {
             return;
         }
         response.json().then((data) => {
+            const bracketHeader = document.getElementById("bracketHeader");
+            bracketHeader.innerText = "Tournament Bracket - ID " + data.id;
             bracketComp.bracket = data;
             playerList.friends = data.players;
         });
@@ -47,7 +49,7 @@ async function getTournamentDetails() {
 }
 
 function createTournament() {
-    const token = localStorage.getItem("token");
+    const token = getUserToken();
     if (!token) {
         window.location.replace("/login");
         return;
@@ -63,6 +65,7 @@ function createTournament() {
         }),
     }).then((response) => {
         if (response.status !== 201) {
+            // Error Handling
             return;
         }
         getTournamentDetails();
@@ -70,7 +73,29 @@ function createTournament() {
 }
 
 function joinTournament() {
-    return;
+    const token = getUserToken();
+    if (!token) {
+        window.location.replace("/login");
+        return;
+    }
+    const tournamentId = document.getElementById("tournamentId").value;
+    const api_url =
+        constants.BACKEND_HOST +
+        constants.BACKEND_TOURNAMENT_API +
+        tournamentId +
+        "/join/";
+    fetch(api_url, {
+        method: "POST",
+        headers: {
+            Authorization: "Bearer " + token,
+        },
+    }).then((response) => {
+        if (response.status !== 200) {
+            // Error Handling
+            return;
+        }
+        getTournamentDetails();
+    });
 }
 
 function setup() {
