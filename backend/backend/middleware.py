@@ -1,5 +1,6 @@
 from account.models import UserToken
 from django.contrib.auth.models import User
+from django.core.cache import cache
 
 
 class DisableCSRFMiddleware(object):
@@ -26,4 +27,5 @@ class JWTAuthenticaitonMiddleware(object):
         if not user_token.is_token_valid():
             return self.get_response(request)
         setattr(request, "user", user_token.user)
+        cache.set(user_token.user.id, "online", timeout=60 * 5)
         return self.get_response(request)

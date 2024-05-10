@@ -35,6 +35,13 @@ def generate_user_token(user: User) -> (str, str):
     return access_token, refresh_token
 
 
+def get_user_by_token(token: str) -> User:
+    token = UserToken.objects.filter(access_token=token).first()
+    if not token or token.is_token_valid():
+        return None
+    return token.user
+
+
 def check_user_ingame(user: User) -> bool:
     return user.gameplayer_set.filter(
         game_room__is_active=True, is_active=True

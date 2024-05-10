@@ -2,6 +2,7 @@ import time
 
 import jwt
 from django.conf import settings
+from django.core.cache import cache
 from django.db import models
 from gameplay.models import GamePlayer
 
@@ -48,7 +49,8 @@ class UserDetails(models.Model):
     is_connected = models.BooleanField(default=False)
 
     def serialize(self) -> dict:
-        status = "online" if self.is_connected else "offline"
+        # status = "online" if self.is_connected else "offline"
+        status = "online" if cache.get(self.user.id) else "offline"
         if GamePlayer.objects.filter(player=self.user, is_active=True).exists():
             status = "ingame"
         return {
