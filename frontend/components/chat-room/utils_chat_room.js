@@ -9,7 +9,7 @@ export function create_chat_socket() {
 
 export function websocket_event(context) {
 	context.chatSocket.onopen = () => {
-		open_chat_room(context);
+		open_chat_request(context);
 		console.log('WebSocket connection established.');
 		console.log("user: " + localStorage.getItem("username"))
 	};
@@ -20,7 +20,7 @@ export function websocket_event(context) {
 		const data = JSON.parse(e.data);
 		if (data.type === "chat_history")
 		{
-			open_chat_history(context, data)
+			open_chat(context, data)
 		}
 		if (data.type === "message" && localStorage.getItem("username") !== data.sender) {
 			receive_message(context, data)
@@ -55,14 +55,14 @@ export function send_message(context, message) {
 	}));
 }
 
-function open_chat_room(context) {
+function open_chat_request(context) {
 	context.chatSocket.send(JSON.stringify({
 		"chat_history" : "True",
 		"authorization" : localStorage.getItem("token") || null,
 	}));
 }
 
-function open_chat_history(context, data) {
+function open_chat(context, data) {
 	context.chats = data.chats_data;
 	context.render();
 }
