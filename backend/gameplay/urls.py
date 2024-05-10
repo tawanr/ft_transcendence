@@ -15,7 +15,7 @@ urlpatterns = [
         name="tournament_detail",
     ),
     path(
-        "tournament/<int:tournament_id>/join",
+        "tournament/<int:tournament_id>/join/",
         views.join_tournament,
         name="join_tournament",
     ),

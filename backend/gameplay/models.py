@@ -66,7 +66,7 @@ class Tournament(models.Model):
             player=player,
             tournament=self,
         ).afirst():
-            if is_host:
+            if is_host or await self.players.acount() == 1:
                 tour_player.is_host = True
                 await tour_player.asave()
             return tour_player

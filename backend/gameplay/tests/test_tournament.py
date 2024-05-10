@@ -57,10 +57,18 @@ class TestTournament(TestCase):
         response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
         self.assertEqual(response.status_code, 404)
 
+        # Test joining a tournament
         async_to_sync(self.tournament.add_player)(self.users[0])
         response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["id"], self.tournament.id)
+        data = response.json()
+        self.assertEqual(data["id"], self.tournament.id)
+        self.assertEqual(data["isHost"], True)
+
+        # Test leaving a tournament
+        response = self.client.delete(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.tournament.players.count(), 0)
 
     def test_start_tournament(self):
         url = reverse(
@@ -129,6 +137,7 @@ class TestTournament(TestCase):
         url = reverse("tournament_detail", kwargs={"tournament_id": self.tournament.id})
         token, _ = generate_user_token(self.users[0])
         response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
+        print(f"{response.json()=}")
         expected = {
             "id": self.tournament.id,
             "size": 4,
@@ -173,31 +182,31 @@ class TestTournament(TestCase):
                 {
                     "playerName": "test1",
                     "playerId": self.users[0].pk,
-                    "avatar": "",
+                    "avatar": "/uploads/avatars/42_Logo.png",
                     "status": "ingame",
                 },
                 {
                     "playerName": "test2",
                     "playerId": self.users[1].pk,
-                    "avatar": "",
+                    "avatar": "/uploads/avatars/42_Logo.png",
                     "status": "ingame",
                 },
                 {
                     "playerName": "test3",
                     "playerId": self.users[2].pk,
-                    "avatar": "",
+                    "avatar": "/uploads/avatars/42_Logo.png",
                     "status": "ingame",
                 },
                 {
                     "playerName": "test4",
                     "playerId": self.users[3].pk,
-                    "avatar": "",
+                    "avatar": "/uploads/avatars/42_Logo.png",
                     "status": "ingame",
                 },
             ],
         }
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), expected)
+        self.assertDictEqual(response.json(), expected)
 
     async def test_play_tournament(self):
         self.assertFalse(await self.tournament.start_tournament())

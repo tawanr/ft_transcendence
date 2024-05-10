@@ -14,7 +14,7 @@ from gameplay.models import Tournament, TournamentPlayer
 User = get_user_model()
 
 
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET", "POST", "DELETE"])
 @login_required_401
 def user_tournament(request):
     if request.method == "POST":
@@ -87,8 +87,35 @@ def user_tournament(request):
             {
                 "id": tournament.id,
                 "size": tournament.size,
+                "isHost": player.is_host,
                 "bracket": bracket,
                 "players": players,
+            }
+        )
+    elif request.method == "DELETE":
+        player = (
+            TournamentPlayer.objects.filter(
+                player=request.user,
+                is_active=True,
+                tournament__is_active=True,
+            )
+            .select_related("tournament")
+            .first()
+        )
+        if not player:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "User is not in any active tournament",
+                },
+                status=404,
+            )
+        tournament = player.tournament
+        tournament.players.remove(request.user)
+        return JsonResponse(
+            {
+                "success": True,
+                "message": "User removed from tournament successfully",
             }
         )
 
