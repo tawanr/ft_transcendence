@@ -1,4 +1,5 @@
 import * as constants from "./constants.js";
+import { getUserToken } from "./utils.js";
 
 imgInput.onchange = (e) => {
     const [file] = imgInput.files;
@@ -16,11 +17,12 @@ function submitImage(e) {
     if (file) {
         const formData = new FormData();
         formData.append("image", file);
+        const token = getUserToken();
         fetch(apiUrl, {
             method: "POST",
             body: formData,
             headers: {
-                Authorization: "Bearer " + localStorage.getItem("token"),
+                Authorization: "Bearer " + token,
             },
         })
             .then((response) => response.json())

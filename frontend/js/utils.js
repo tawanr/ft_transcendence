@@ -6,7 +6,7 @@ export async function initUser() {
      * Check localStorage whether there's a saved token
      * Then fetch the user data from the backend
      */
-    const token = localStorage.getItem("token");
+    const token = getUserToken();
     const username = await fetchUserData(token).catch((error) => {
         return fetchUserData(localStorage.getItem("token"));
     });
@@ -177,9 +177,5 @@ export function parseJwt(token) {
 export function getUserToken() {
     refreshUserToken();
     const token = localStorage.getItem("token");
-    if (!token) {
-        window.location.replace("/login");
-        return;
-    }
     return token;
 }

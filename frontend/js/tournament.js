@@ -21,6 +21,10 @@ const playerList = document.querySelector("friend-list");
 
 async function getTournamentDetails() {
     const token = getUserToken();
+    if (!token) {
+        window.location.replace("/login");
+        return;
+    }
     const api_url = constants.BACKEND_HOST + constants.BACKEND_TOURNAMENT_API;
     await fetch(api_url, {
         method: "GET",
