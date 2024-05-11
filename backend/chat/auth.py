@@ -68,7 +68,7 @@ async def check_authorization_header(self):
 		await self.ft_send_err("disconnect", "User is invalid!!!")
 		return
 
-	await send_notification(self, self.user)
+	# await send_notification(self, self.user)
 	print(f"Connect from user_id: {self.user}")
 
 async def check_authorization_payload(self):
@@ -78,19 +78,12 @@ async def check_authorization_payload(self):
 	elif authorization := self.data.get("authorization"):
 		self.user = await check_jwt(self, authorization)
 		if self.user:
-			await send_notification(self, self.user)
+			# await send_notification(self, self.user)
 			print("After send noti")
 	else:
 		print("Invalid authentication!!!")
 		await self.ft_send_err("disconnect", "Invalid registration. Closing connection.")
 		raise self.CustomException("Unauthorized")
-
-	###########dummy###################
-	# self.user = self.data.get("sender")
-	# if self.data.get("chat_history"):
-	# 	await self.send_chat_history()
-	# await send_notification(self, self.user)
-	###########dummy###################
 
 async def check_jwt(self, token):
 	print("Check jwt!!!")

@@ -220,7 +220,7 @@ class UserConsumer(AsyncWebsocketConsumer):
 
         if not au.is_user_active_in_room(self.room_name, self.user):
             print(f"user is: {self.user}")
-            await send_notification(self, self.user)
+            # await send_notification(self, self.user)
             return
 
         #Find room obj
