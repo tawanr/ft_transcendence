@@ -1,4 +1,5 @@
 import { fetchHTML } from "../../js/utils.js";
+import { create_chat_socket, websocket_event, send_message } from "./utils_chat_room.js";
 
 class ChatRoom extends HTMLElement {
     constructor() {
@@ -6,100 +7,14 @@ class ChatRoom extends HTMLElement {
         this.shadow = this.attachShadow({ mode: "closed" });
         fetchHTML("/components/chat-room/chat-room.html").then((html) => {
             this.html = html;
-            this.render();
+            // this.render();
         });
-        this.chats = [
-            {
-                senderName: "abc",
-                message: "hello",
-                date: "2021-07-01",
-                isSent: false,
-            },
-            {
-                senderName: "test",
-                message: "hi",
-                date: "2021-07-01",
-                isSent: true,
-            },
-            {
-                senderName: "abc",
-                message: "sup",
-                date: "2021-07-01",
-                isSent: false,
-            },
-            {
-                senderName: "abc",
-                message: "wanna play?",
-                date: "2021-07-01",
-                isSent: false,
-            },
-            {
-                senderName: "abc",
-                message: "hello",
-                date: "2021-07-01",
-                isSent: false,
-            },
-            {
-                senderName: "test",
-                message: "hi",
-                date: "2021-07-01",
-                isSent: true,
-            },
-            {
-                senderName: "abc",
-                message: "sup",
-                date: "2021-07-01",
-                isSent: false,
-            },
-            {
-                senderName: "abc",
-                message: "wanna play?",
-                date: "2021-07-01",
-                isSent: false,
-            },
-            {
-                senderName: "test",
-                message: "something",
-                date: "2021-07-01",
-                isSent: true,
-            },
-            {
-                senderName: "abc",
-                message: "hello",
-                date: "2021-07-01",
-                isSent: false,
-            },
-            {
-                senderName: "test",
-                message: "hi",
-                date: "2021-07-01",
-                isSent: true,
-            },
-            {
-                senderName: "abc",
-                message: "sup",
-                date: "2021-07-02",
-                isSent: false,
-            },
-            {
-                senderName: "abc",
-                message: "sup2",
-                date: "2021-07-02",
-                isSent: false,
-            },
-            {
-                senderName: "def",
-                message: "wanna play?",
-                date: "2021-07-02",
-                isSent: false,
-            },
-            {
-                senderName: "test",
-                message: "something",
-                date: "2021-07-03",
-                isSent: true,
-            },
-        ];
+
+        this.chats = []
+
+        this.chatSocket = create_chat_socket();
+        websocket_event(this);
+
         this.groupChat = this.hasAttribute("group-chat");
     }
 
@@ -114,7 +29,6 @@ class ChatRoom extends HTMLElement {
 
         for (let i = 0; i < this.chats.length; i++) {
             const chat = this.chats[i];
-
             if (chat.isSent) {
                 currentSender = "";
             }
@@ -170,6 +84,7 @@ class ChatRoom extends HTMLElement {
         const chatInput = this.shadow.getElementById("chatInput");
         const message = chatInput.value;
         if (message.length > 0) {
+            send_message(this, message);
             const currentDate = new Date();
             const currentDateString = currentDate.toISOString().substring(0, 10);
             const chat = {

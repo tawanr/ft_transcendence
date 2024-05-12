@@ -1,9 +1,8 @@
 import jwt
-import json
 from django.conf import settings
 from account.models import UserToken
-from .utils_models import clear_notification
-from .utils_consumers import display_chat_history
+from .notification import send_notification
+from .utils_consumers import ActiveUsers as au
 
 async def check_authorization_header(self):
 	print("In check_auth function!!!")
@@ -54,7 +53,6 @@ async def check_authorization_header(self):
 		# Token has expired, close the connection
 		print("JWT token has expired!!!")
 		await self.ft_send_err("disconnect", "JWT token has expired!!!")
-		return
 	except jwt.InvalidTokenError:
 		# Invalid token, close the connection
 		print("Invalid JWT token!!!")
@@ -69,25 +67,35 @@ async def check_authorization_header(self):
 		print("User is invalid!!!")
 		await self.ft_send_err("disconnect", "User is invalid!!!")
 		return
-	await self.send(text_data=json.dumps({
-		"chats_data" : await display_chat_history(self),
-	}))
 
-	self.active_channel[self.user] = self.channel_name
-	#clear notification
-	await clear_notification(self, self.user)
+	# await send_notification(self, self.user)
 	print(f"Connect from user_id: {self.user}")
 
+async def check_authorization_payload(self):
+	print("In check auth payload!!!")
+	if self.user:
+		pass
+	elif authorization := self.data.get("authorization"):
+		self.user = await check_jwt(self, authorization)
+		if self.user:
+			# await send_notification(self, self.user)
+			print("After send noti")
+	else:
+		print("Invalid authentication!!!")
+		await self.ft_send_err("disconnect", "Invalid registration. Closing connection.")
+		raise self.CustomException("Unauthorized")
+
 async def check_jwt(self, token):
-        print("Check authentication from json msg!!!")
-        token = (
-            await UserToken.objects.filter(access_token=token)
-            .select_related("user")
-            .afirst()
-        )
-        if not token or not token.is_token_valid():
-            print("Token is invalid!!!!")
-            await self.ft_send_err("disconnect", "Unauthorized, invalid token. Closing connection.")
-            raise self.CustomException("Unauthorized")
-        else:
-            return token.user.username
+	print("Check jwt!!!")
+	token = (
+		await UserToken.objects.filter(access_token=token)
+		.select_related("user")
+		.afirst()
+	)
+	if not token or not token.is_token_valid():
+		print("Token is invalid!!!!")
+		await self.ft_send_err("disconnect", "Unauthorized, invalid token. Closing connection.")
+		raise self.CustomException("Unauthorized")
+	else:
+		print("Pass auth")
+		return token.user.username
