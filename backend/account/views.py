@@ -5,6 +5,7 @@ from uuid import uuid4
 from xml.dom.domreg import registered
 import requests
 from django.shortcuts import redirect
+from django.conf import settings
 
 import jwt
 from django.contrib.auth.models import User
@@ -227,8 +228,8 @@ def authen42_redirect(request):
     user_info = exchange_code(code)
     # create data info form
     form_data = {
-        'username':user_info['first_name']
-        'password':NULL
+        'username':user_info['first_name'],
+        'password':NULL,
         'email':user_info['email']
     }
     # Check whether user is already register or not
@@ -269,8 +270,8 @@ def exchange_code(code):
     print(f"show code in fn {code}")
     data = {
         'grant_type': 'authorization_code',
-        'client_id': 'u-s4t2ud-eb16615eeae12cb0c925ccb880a7b21c759357722b29dce6158a2c948c364dae',
-        'client_secret': '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',
+        'client_id': settings.CLIENT_ID,
+        'client_secret': settings.CLIENT_SECRET,
         'code': code,
         'redirect_uri': 'http://127.0.0.1:8000/account/redirect42/',
     }
