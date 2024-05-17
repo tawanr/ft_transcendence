@@ -1,5 +1,6 @@
 import json
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -167,10 +168,14 @@ def list_game_history(request):
         }
         if player1:
             history["player1Name"] = player1.name
-            history["player1Avatar"] = player1.player.details.get_avatar()
+            history["player1Avatar"] = settings.DEFAULT_AVATAR
+            if player1.player:
+                history["player1Avatar"] = player1.player.details.get_avatar()
         if player2:
             history["player2Name"] = player2.name
-            history["player2Avatar"] = player2.player.details.get_avatar()
+            history["player2Avatar"] = settings.DEFAULT_AVATAR
+            if player2.player:
+                history["player2Avatar"] = player2.player.details.get_avatar()
         games.append(history)
     return JsonResponse({"data": games})
 

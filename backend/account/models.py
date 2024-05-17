@@ -49,7 +49,7 @@ class UserDetails(models.Model):
     is_connected = models.BooleanField(default=False)
 
     def get_avatar(self) -> str:
-        return self.avatar.url if self.avatar else "/uploads/avatars/42_Logo.png"
+        return self.avatar.url if self.avatar else settings.DEFAULT_AVATAR
 
     def serialize(self) -> dict:
         # status = "online" if self.is_connected else "offline"
@@ -59,9 +59,7 @@ class UserDetails(models.Model):
         return {
             "playerName": self.user.username,
             "playerId": self.user.id,
-            "avatar": self.avatar.url
-            if self.avatar
-            else "/uploads/avatars/42_Logo.png",
+            "avatar": self.avatar.url if self.avatar else settings.DEFAULT_AVATAR,
             "status": status,
         }
 

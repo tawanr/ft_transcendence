@@ -209,3 +209,5 @@ LOGGING = {
         },
     },
 }
+
+DEFAULT_AVATAR = os.environ.get("DEFAULT_AVATAR", "uploads/avatars/42_Logo.png")
