@@ -357,13 +357,19 @@ class GameRoom(models.Model):
     async def victory(self, player_id):
         self.is_active = False
         self.is_finished = True
-        winner = await self.players.filter(gameplayer__session_id=player_id).afirst()
-        await self.players.through.objects.filter(
-            player=winner, game_room=self
-        ).aupdate(is_winner=True)
-        await self._deactivate_tournament_player(
-            await self.players.exclude(id=winner.id).afirst()
+        winner = (
+            await GamePlayer.objects.filter(session_id=player_id)
+            .select_related("game_room")
+            .afirst()
         )
+        if not winner:
+            raise Exception("Player not found")
+        winner.is_winner = True
+        await winner.asave()
+        if winner.game_room.tournament:
+            await self._deactivate_tournament_player(
+                await self.players.exclude(id=winner.id).afirst()
+            )
         await self.asave()
         # await self.update_win_loss(self)
 

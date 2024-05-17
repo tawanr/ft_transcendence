@@ -1,14 +1,14 @@
 import asyncio
 import json
+import logging
 
 from account.models import UserToken
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.http import JsonResponse
 
 import gameplay.constants as constants
-from gameplay.models import GameRoom, GamePlayer
+from gameplay.models import GamePlayer, GameRoom
 from gameplay.states import BallState, GameState, PlayerState
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -227,7 +227,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             self.game_group_name,
             {
                 "type": "state.end",
-                "winner_id": str(self.player_id),
+                "winner_id": str(player_id),
             },
         )
 
@@ -244,13 +244,18 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         logger.debug("\nGame started.\n")
         await self.game.ball.reset_pos()
         while self.game.started:
-            async with self.update_lock:
-                for player in self.game.players:
-                    await player.update()
-                await self.game.ball.update(self.game.players)
-            if player_id := await self.game.update():
-                await self.end_game(player_id)
-            await self.update_group()
-            await self.send_group()
-            await asyncio.sleep(0.03)
+            try:
+                async with self.update_lock:
+                    for player in self.game.players:
+                        await player.update()
+                    await self.game.ball.update(self.game.players)
+                if player_id := await self.game.update():
+                    print(f"Winner: {player_id}")
+                    await self.end_game(player_id)
+                await self.update_group()
+                await self.send_group()
+                await asyncio.sleep(0.03)
+            except Exception as e:
+                logger.error(f"Game loop error: {e}")
+                self.game.started = False
         logger.debug("\nGame ended.\n")

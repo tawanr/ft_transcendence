@@ -1,12 +1,12 @@
 import math
-from random import randrange
+from random import choice, randrange
 from typing import List
 from uuid import uuid4
 
 from attr import dataclass
 
 import gameplay.constants as constants
-from gameplay.models import GameRoom
+from gameplay.models import GamePlayer, GameRoom
 
 
 @dataclass
@@ -45,7 +45,6 @@ class PlayerState(EntityState):
     async def set_controls(self, up: bool = False, down: bool = False):
         self.up_key = up
         self.down_key = down
-        print(f"\n{self.player_id} - {self.up_key} - {self.down_key}\n")
 
 
 @dataclass
@@ -55,6 +54,7 @@ class BallState(EntityState):
     score_2: int = 0
 
     async def update(self, players: List[PlayerState]):
+        assert len(players) == 2
         diff_x = self.speed * math.cos(math.radians(self.direction))
         diff_y = self.speed * math.sin(math.radians(self.direction))
         self.x += diff_x
@@ -63,9 +63,15 @@ class BallState(EntityState):
             await self.check_collision(player)
         if self.x <= 0:
             self.score_2 += 1
+            player = await GamePlayer.objects.aget(session_id=players[1].player_id)
+            player.score += 1
+            await player.asave()
             await self.reset_pos()
         elif self.x + self.width >= constants.GAME_WIDTH:
             self.score_1 += 1
+            player = await GamePlayer.objects.aget(session_id=players[0].player_id)
+            player.score += 1
+            await player.asave()
             await self.reset_pos()
 
     async def check_collision(self, player: PlayerState):
@@ -108,7 +114,7 @@ class BallState(EntityState):
     async def reset_pos(self):
         self.x = (constants.GAME_WIDTH / 2) - (constants.BALL_SIZE / 2)
         self.y = (constants.GAME_HEIGHT / 2) - (constants.BALL_SIZE / 2)
-        self.direction = randrange(120, 210)
+        self.direction = (randrange(45, 135) + choice([90, 270])) % 360
         self.speed = constants.BALL_SPEED
 
     async def check_end(self):
