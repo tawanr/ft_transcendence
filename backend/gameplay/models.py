@@ -368,7 +368,7 @@ class GameRoom(models.Model):
         # await self.update_win_loss(self)
 
     async def _deactivate_tournament_player(self, user: User):
-        if not user:
+        if not user or not self.tournament:
             return
         tournament = await Tournament.objects.aget(gameroom=self)
         if not tournament:

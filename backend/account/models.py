@@ -48,6 +48,9 @@ class UserDetails(models.Model):
     friends = models.ManyToManyField("self")
     is_connected = models.BooleanField(default=False)
 
+    def get_avatar(self) -> str:
+        return self.avatar.url if self.avatar else "/uploads/avatars/42_Logo.png"
+
     def serialize(self) -> dict:
         # status = "online" if self.is_connected else "offline"
         status = "online" if cache.get(self.user.id) else "offline"

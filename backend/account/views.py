@@ -146,7 +146,7 @@ def accept_friend_invite_view(request):
 @require_GET
 def list_game_history(request):
     qs_history = (
-        GameRoom.objects.filter(players=request.user)
+        GameRoom.objects.filter(players=request.user, is_started=True)
         .prefetch_related("players")
         .order_by("-created_date")
     )
@@ -163,22 +163,14 @@ def list_game_history(request):
             "isFinished": game.is_finished,
             "score": game.get_scores(),
             "isWinner": game.is_winner(request.user),
-            "date": game.created_date,
+            "date": game.created_date.isoformat(),
         }
         if player1:
             history["player1Name"] = player1.name
-            history["player1Avatar"] = (
-                player1.player.details.avatar.url
-                if player1.player and player1.player.details.avatar
-                else ""
-            )
+            history["player1Avatar"] = player1.player.details.get_avatar()
         if player2:
             history["player2Name"] = player2.name
-            history["player2Avatar"] = (
-                player2.player.details.avatar.url
-                if player2.player and player2.player.details.avatar
-                else ""
-            )
+            history["player2Avatar"] = player2.player.details.get_avatar()
         games.append(history)
     return JsonResponse({"data": games})
 
