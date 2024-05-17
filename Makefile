@@ -17,7 +17,7 @@ backend:
 	cd backend && python manage.py runserver 0.0.0.0:8000
 
 test:
-	cd backend && python manage.py test
+	cd backend && python manage.py test $(var)
 
 shell:
 	cd backend && python manage.py shell

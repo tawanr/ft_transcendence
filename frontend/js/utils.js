@@ -7,6 +7,11 @@ export async function initUser() {
      * Then fetch the user data from the backend
      */
     const token = getUserToken();
+    if (!token) {
+        localStorage.removeItem("username");
+        updateUserNav();
+        return;
+    }
     const username = await fetchUserData(token).catch((error) => {
         return fetchUserData(token);
     });
@@ -115,6 +120,11 @@ export async function refreshUserToken() {
             }
             localStorage["token"] = data.access_token;
             return true;
+        })
+        .catch((error) => {
+            console.error(error);
+            localStorage.removeItem("token");
+            return false;
         });
 }
 

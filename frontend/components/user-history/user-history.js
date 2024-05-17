@@ -1,37 +1,6 @@
 import { fetchHTML } from "../../js/utils.js";
-
-class GameHistory {
-    /**
-     * Object for a game history.
-     * @param {string} player1Name
-     * @param {string} player1Avatar
-     * @param {string} player2Name
-     * @param {string} player2Avatar
-     * @param {boolean} isFinished
-     * @param {string} score
-     * @param {boolean} isWinner
-     * @param {string} date
-     */
-    constructor(
-        player1Name,
-        player1Avatar,
-        player2Name,
-        player2Avatar,
-        isFinished,
-        score,
-        isWinner,
-        date
-    ) {
-        this.player1Name = player1Name;
-        this.player1Avatar = player1Avatar;
-        this.player2Name = player2Name;
-        this.player2Avatar = player2Avatar;
-        this.isFinished = isFinished;
-        this.score = score;
-        this.isWinner = isWinner;
-        this.date = date;
-    }
-}
+import { GameHistory } from "../../js/models/game-history.js";
+import { fetchUserHistory } from "../../js/user.js";
 
 class UserHistory extends HTMLElement {
     static observedAttributes = [];
@@ -40,8 +9,31 @@ class UserHistory extends HTMLElement {
         super();
         this.shadow = this.attachShadow({ mode: "closed" });
         fetchHTML("/components/user-history/user-history.html").then((html) => {
-            this.render(html);
+            this._html = html;
+            this.render();
         });
+        this.getUserHistory();
+    }
+
+    async getUserHistory() {
+        await fetchUserHistory().then((data) => {
+            this.histories = data;
+        });
+    }
+
+    set histories(data) {
+        this._histories = data;
+        this.render(this.html);
+    }
+
+    /**
+     * History data for the current user
+     *
+     * @readonly
+     * @type {GameHistory[]}
+     */
+    get histories() {
+        return this._histories;
     }
 
     connectedCallback() {
@@ -49,42 +41,19 @@ class UserHistory extends HTMLElement {
         if (this.hasAttribute("max-list")) {
             this.maxList = parseInt(this.getAttribute("max-list"));
         }
-        this.histories = [
-            new GameHistory(
-                "abc",
-                "/uploads/avatars/42_Logo.png",
-                "def",
-                "/uploads/avatars/42_Logo.png",
-                true,
-                "5 - 0",
-                true,
-                "2021-05-06"
-            ),
-            new GameHistory(
-                "ggg",
-                "/uploads/avatars/42_Logo.png",
-                "abc",
-                "/uploads/avatars/42_Logo.png",
-                true,
-                "2 - 5",
-                false,
-                "2021-05-06"
-            ),
-        ];
+        this.histories = [];
     }
 
-    attributeChangedCallback(name, oldValue, newValue) {}
-
-    render(html) {
-        this.shadow.innerHTML = html;
+    render() {
+        this.shadow.innerHTML = this._html;
 
         const historyList = this.shadow.getElementById("historyList");
-        for (let i = 0; i < this.maxList; i++) {
+        for (let i = 0; i < this.maxList && i < this.histories.length; i++) {
             const historyItem = document.createElement("li");
-            const history = this.histories[i % 2];
+            const history = this.histories[i];
             historyItem.classList.add("historyItem");
             historyItem.classList.add("list-group-item");
-            const victory = this.histories[i % 2].isWinner
+            const victory = this.histories[i].isWinner
                 ? "<span class='text-success'>Victory</span>"
                 : "<span class='text-danger'>Defeat</span>";
             historyItem.innerHTML = `
