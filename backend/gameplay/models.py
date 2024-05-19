@@ -9,6 +9,10 @@ from django.contrib.auth import get_user_model
 from django.db import models
 
 
+class RoundNotFinishedException(Exception):
+    pass
+
+
 class TournamentPlayer(models.Model):
     player = models.ForeignKey("auth.User", on_delete=models.CASCADE)
     tournament = models.ForeignKey("Tournament", on_delete=models.CASCADE)
@@ -177,7 +181,7 @@ class Tournament(models.Model):
 
     async def start_new_round(self) -> bool:
         if not await self.check_round_end():
-            raise Exception("Round not finished")
+            raise RoundNotFinishedException("Round not finished")
         current_round = await self.get_current_round()
         if (
             await self.players.through.objects.filter(
@@ -290,7 +294,9 @@ class GameRoom(models.Model):
         return player.session_id
 
     async def add_player(self, player):
-        current_player_count = await self.players.acount()
+        current_player_count = await GamePlayer.objects.filter(
+            game_room=self, is_active=True
+        ).acount()
         # if self.tournament and await self.players.filter(player=player).aexists():
         #     game_player = await GamePlayer.objects.aget(player=player, game_room=self)
         #     game_player.is_active = True
@@ -317,9 +323,9 @@ class GameRoom(models.Model):
                 "name": player.name,
                 "player_id": player.session_id,
             }
-            async for player in GamePlayer.objects.filter(
-                game_room=self, is_active=True
-            ).order_by("player_number")
+            async for player in GamePlayer.objects.filter(game_room=self).order_by(
+                "player_number"
+            )
         ]
         return players
 
@@ -327,19 +333,27 @@ class GameRoom(models.Model):
         self.is_active = False
         await self.asave()
 
-    # async def update_win_loss(self, game_room):
-    #     async for gp_obj in GamePlayer.objects.filter(game_room=game_room).select_related('player'):
-    #         if gp_obj.is_winner is True:
-    #             gp_obj.win += 1
-    #         else:
-    #             gp_obj.loss += 1
-    #         await gp_obj.asave()
+    async def end_game(self):
+        self.is_active = False
+        self.is_finished = True
+        await self.asave()
+        async for player in GamePlayer.objects.filter(game_room=self):
+            player.is_active = False
+            await player.asave()
+        await self.check_tournament()
+
+    async def check_tournament(self):
+        tournament = await Tournament.objects.filter(gameroom=self).afirst()
+        if not tournament:
+            return
+        try:
+            await tournament.start_new_round()
+        except RoundNotFinishedException:
+            pass
 
     async def force_end(self, player_id):
         if not player_id:
             return
-        self.is_active = False
-        self.is_finished = True
         winner = await self.players.exclude(gameplayer__session_id=player_id).afirst()
         await self.players.through.objects.filter(
             player=winner, game_room=self
@@ -347,19 +361,12 @@ class GameRoom(models.Model):
         await self._deactivate_tournament_player(
             await self.players.exclude(id=winner.id).afirst()
         )
-        await self.asave()
-
-        # test_obj = await sync_to_async(GamePlayer.objects.filter(game_room=self).count)()
-        # if test_obj <= 1:
-        #     return
-        # await self.update_win_loss(self)
+        await self.end_game()
 
     async def victory(self, player_id):
-        self.is_active = False
-        self.is_finished = True
         winner = (
             await GamePlayer.objects.filter(session_id=player_id)
-            .select_related("game_room")
+            .select_related("game_room", "game_room__tournament", "player")
             .afirst()
         )
         if not winner:
@@ -368,13 +375,12 @@ class GameRoom(models.Model):
         await winner.asave()
         if winner.game_room.tournament:
             await self._deactivate_tournament_player(
-                await self.players.exclude(id=winner.id).afirst()
+                await self.players.exclude(id=winner.player.id).afirst()
             )
-        await self.asave()
-        # await self.update_win_loss(self)
+        await self.end_game()
 
     async def _deactivate_tournament_player(self, user: User):
-        if not user or not self.tournament:
+        if not user:
             return
         tournament = await Tournament.objects.aget(gameroom=self)
         if not tournament:
@@ -391,9 +397,7 @@ class GameRoom(models.Model):
     def get_scores(self) -> str:
         score_str = ""
         players = (
-            GamePlayer.objects.filter(game_room=self, is_active=True)
-            .order_by("player_number")
-            .all()
+            GamePlayer.objects.filter(game_room=self).order_by("player_number").all()
         )
         for i in range(self.max_players):
             if score_str:
@@ -406,7 +410,7 @@ class GameRoom(models.Model):
 
     def is_winner(self, user):
         return (
-            GamePlayer.objects.filter(game_room=self, is_active=True)
+            GamePlayer.objects.filter(game_room=self)
             .filter(player=user, is_winner=True)
             .exists()
         )

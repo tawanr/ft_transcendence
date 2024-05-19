@@ -88,6 +88,7 @@ def user_tournament(request):
                 "id": tournament.id,
                 "size": tournament.size,
                 "isHost": player.is_host,
+                "isStarted": tournament.is_playing,
                 "bracket": bracket,
                 "players": players,
             }
@@ -145,6 +146,16 @@ def tournament_detail(request, tournament_id: int):
             {"success": True, "message": "Tournament started"},
         )
     elif request.method == "GET":
+        if not TournamentPlayer.objects.filter(
+            player=request.user,
+        ).exists():
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "User not in tournament",
+                },
+                status=404,
+            )
         bracket = async_to_sync(tournament.bracket)()
         players = async_to_sync(tournament.get_players)()
         return JsonResponse(

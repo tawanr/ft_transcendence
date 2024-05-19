@@ -82,49 +82,57 @@ class GameplayConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
 
-        if data["type"] == "client.register":
-            token = None
-            if authorization := data.get("authorization"):
-                token = (
-                    await UserToken.objects.filter(access_token=authorization)
-                    .select_related("user")
-                    .afirst()
+        try:
+            if data["type"] == "client.register":
+                token = None
+                if authorization := data.get("authorization"):
+                    token = (
+                        await UserToken.objects.filter(access_token=authorization)
+                        .select_related("user")
+                        .afirst()
+                    )
+                    if not token or not token.is_token_valid():
+                        return JsonResponse({"details": "Unauthorized"}, status=401)
+                    if player := await GamePlayer.objects.filter(
+                        game_room=self.game.room, player=token.user
+                    ).afirst():
+                        self.player_id = player.session_id
+                    else:
+                        self.player_id = await self.game.room.add_player(token.user)
+                elif name := data.get("playerName"):
+                    self.player_id = await self.game.room.add_player_name(name)
+                else:
+                    await self.send(
+                        text_data={
+                            "type": "disconnect",
+                            "details": "Invalid registration. Closing connection.",
+                        }
+                    )
+                    await self.close()
+                    return
+                self.registered = True
+                await self.set_players()
+
+                await self.channel_layer.group_add(
+                    self.game_group_name,
+                    self.channel_name,
                 )
-                if not token or not token.is_token_valid():
-                    return JsonResponse({"details": "Unauthorized"}, status=401)
-                self.player_id = await self.game.room.add_player(token.user)
-            elif name := data.get("playerName"):
-                self.player_id = await self.game.room.add_player_name(name)
-            else:
+
                 await self.send(
-                    text_data={
-                        "type": "disconnect",
-                        "details": "Invalid registration. Closing connection.",
-                    }
+                    text_data=json.dumps(
+                        {
+                            "type": "roomDetails",
+                            "roomCode": self.game_code,
+                            "playerId": str(self.player_id),
+                            "player_user": token.user.username if token else "",
+                        }
+                    )
                 )
-                await self.close()
-                return
-            self.registered = True
-            await self.set_players()
 
-            await self.channel_layer.group_add(
-                self.game_group_name,
-                self.channel_name,
-            )
-
-            await self.send(
-                text_data=json.dumps(
-                    {
-                        "type": "roomDetails",
-                        "roomCode": self.game_code,
-                        "playerId": str(self.player_id),
-                        "player_user": token.user.username if token else "",
-                    }
-                )
-            )
-
-            await self.update_group()
-            await self.send_group()
+                await self.update_group()
+                await self.send_group()
+        except Exception as e:
+            logger.error(f"Error: {e}")
 
         if not self.player_id:
             return
@@ -145,11 +153,13 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         self.game.started = False
         if not self.host:
             return
+        await self.game.ball.reset_pos()
         await self.game.room.force_end(event["player_id"])
         for player in self.game.players:
             player.ready = False
         logger.info(f"\nPlayer Disconnected: {event['player_id']}\n")
         await self.update_group()
+        await self.end_game(self.player_id)
 
     async def player_ready(self, event):
         if not self.host or self.game.started:

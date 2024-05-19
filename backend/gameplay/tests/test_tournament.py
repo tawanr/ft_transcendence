@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from gameplay.models import GamePlayer, GameRoom, Tournament
+from gameplay.models import GamePlayer, GameRoom, Tournament, TournamentPlayer
 
 
 class TestTournament(TestCase):
@@ -64,6 +64,7 @@ class TestTournament(TestCase):
         data = response.json()
         self.assertEqual(data["id"], self.tournament.id)
         self.assertEqual(data["isHost"], True)
+        self.assertEqual(data["isStarted"], False)
 
         # Test leaving a tournament
         response = self.client.delete(url, HTTP_AUTHORIZATION=f"Bearer {token}")
@@ -182,25 +183,25 @@ class TestTournament(TestCase):
                 {
                     "playerName": "test1",
                     "playerId": self.users[0].pk,
-                    "avatar": "/uploads/avatars/42_Logo.png",
+                    "avatar": "uploads/avatars/42_Logo.png",
                     "status": "ingame",
                 },
                 {
                     "playerName": "test2",
                     "playerId": self.users[1].pk,
-                    "avatar": "/uploads/avatars/42_Logo.png",
+                    "avatar": "uploads/avatars/42_Logo.png",
                     "status": "ingame",
                 },
                 {
                     "playerName": "test3",
                     "playerId": self.users[2].pk,
-                    "avatar": "/uploads/avatars/42_Logo.png",
+                    "avatar": "uploads/avatars/42_Logo.png",
                     "status": "ingame",
                 },
                 {
                     "playerName": "test4",
                     "playerId": self.users[3].pk,
-                    "avatar": "/uploads/avatars/42_Logo.png",
+                    "avatar": "uploads/avatars/42_Logo.png",
                     "status": "ingame",
                 },
             ],
@@ -219,6 +220,7 @@ class TestTournament(TestCase):
         players = await games[0].get_players()
         self.assertEqual(players[0].get("name"), "test1")
         self.assertEqual(players[1].get("name"), "test3")
+        players = [player async for player in TournamentPlayer.objects.all()]
         self.assertEqual(len(await games[1].get_players()), 1)
         self.assertTrue(games[1].is_finished)
         self.assertFalse(await self.tournament.check_round_end())
@@ -260,8 +262,7 @@ class TestTournament(TestCase):
 
         player = await GamePlayer.objects.aget(player_id=self.users[0].pk)
         await games[0].victory(player.session_id)
-        self.assertTrue(await self.tournament.check_round_end())
-        await self.tournament.start_new_round()
+        self.assertEqual(await self.tournament.get_current_round(), 2)
 
         games = await self.tournament.get_games(level=2, is_active=True)
         self.assertEqual(len(games), 1)
@@ -270,10 +271,11 @@ class TestTournament(TestCase):
         self.assertEqual(players[1].get("name"), "test2")
         self.assertFalse(await self.tournament.check_round_end())
         await games[0].victory(players[0].get("player_id"))
-        self.assertTrue(await self.tournament.check_round_end())
-        await self.tournament.start_new_round()
+        await self.tournament.arefresh_from_db()
         self.assertTrue(self.tournament.is_finished)
         self.assertEqual(
             (await self.tournament.get_winner()).username,
             "test1",
         )
+
+    # TODO: Test tournament actions when tournament is ongoing

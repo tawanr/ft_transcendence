@@ -19,11 +19,19 @@ from backend.decorators import login_required_401
 @login_required_401
 def user_view(request):
     user = User.objects.get(id=request.user.id)
+    game_code = ""
+    tournament_id = -1
+    if room := user.gameroom_set.filter(is_active=True).first():
+        game_code = room.game_code
+    if tournament := user.tournamentplayer_set.filter(is_active=True).first():
+        tournament_id = tournament.tournament_id
     return JsonResponse(
         {
             "username": user.username,
             "email": user.email,
             "avatar": user.details.avatar.url if user.details.avatar else "",
+            "active_game": game_code,
+            "active_tournament": tournament_id,
         }
     )
 

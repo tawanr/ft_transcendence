@@ -32,13 +32,14 @@ class TestAccount(TestCase):
         game = self.start_game(self.user, opponent, 5, 2)
         async_to_sync(game.victory)(game.get_player_by_num(1).session_id)
         self.assertTrue(game.is_winner(self.user))
+        game.refresh_from_db()
 
         expected = [
             {
                 "player1Name": self.user.username,
-                "player1Avatar": "/uploads/avatars/42_Logo.png",
+                "player1Avatar": "uploads/avatars/42_Logo.png",
                 "player2Name": opponent.username,
-                "player2Avatar": "/uploads/avatars/42_Logo.png",
+                "player2Avatar": "uploads/avatars/42_Logo.png",
                 "isFinished": True,
                 "score": "5 - 2",
                 "isWinner": True,
@@ -57,9 +58,9 @@ class TestAccount(TestCase):
         self.assertTrue(game.is_winner(opponent))
         result = {
             "player1Name": self.user.username,
-            "player1Avatar": "/uploads/avatars/42_Logo.png",
+            "player1Avatar": "uploads/avatars/42_Logo.png",
             "player2Name": opponent.username,
-            "player2Avatar": "/uploads/avatars/42_Logo.png",
+            "player2Avatar": "uploads/avatars/42_Logo.png",
             "isFinished": True,
             "score": "3 - 5",
             "isWinner": False,
@@ -75,9 +76,9 @@ class TestAccount(TestCase):
         game = self.start_game(self.user, opponent, 1, 1)
         result = {
             "player1Name": self.user.username,
-            "player1Avatar": "/uploads/avatars/42_Logo.png",
+            "player1Avatar": "uploads/avatars/42_Logo.png",
             "player2Name": opponent.username,
-            "player2Avatar": "/uploads/avatars/42_Logo.png",
+            "player2Avatar": "uploads/avatars/42_Logo.png",
             "isFinished": False,
             "score": "1 - 1",
             "isWinner": False,

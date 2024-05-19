@@ -10,7 +10,7 @@ urlpatterns = [
         name="add_player_to_tournament",
     ),
     path(
-        "tournament/<int:tournament_id>/",
+        "tournament/<int:tournament_id>",
         views.tournament_detail,
         name="tournament_detail",
     ),
