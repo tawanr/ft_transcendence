@@ -66,9 +66,8 @@ def user_tournament(request):
         player = (
             TournamentPlayer.objects.filter(
                 player=request.user,
-                is_active=True,
-                tournament__is_active=True,
             )
+            .order_by("-date_added")
             .select_related("tournament")
             .first()
         )
@@ -88,7 +87,8 @@ def user_tournament(request):
                 "id": tournament.id,
                 "size": tournament.size,
                 "isHost": player.is_host,
-                "isStarted": tournament.is_playing,
+                "isPlaying": tournament.is_playing,
+                "isFinished": tournament.is_finished,
                 "bracket": bracket,
                 "players": players,
             }
@@ -162,6 +162,7 @@ def tournament_detail(request, tournament_id: int):
             {
                 "id": tournament.id,
                 "size": tournament.size,
+                "isPlaying": tournament.is_playing,
                 "bracket": bracket,
                 "players": players,
             }
