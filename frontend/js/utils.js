@@ -197,3 +197,9 @@ export function getUserToken() {
     const token = localStorage.getItem("token");
     return token;
 }
+
+export function get_path_params() {
+    const path = window.location.pathname;
+    const paths = path.split("/");
+    return paths.slice(2);
+}

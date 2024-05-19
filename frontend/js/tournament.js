@@ -14,7 +14,7 @@ const pointerScroll = (elem) => {
     addEventListener("pointermove", drag);
 };
 
-document.querySelectorAll(".bracketContent").forEach(pointerScroll);
+document.querySelectorAll(".b racketContent").forEach(pointerScroll);
 
 const bracketComp = document.querySelector("bracket-component");
 const playerList = document.querySelector("friend-list");
@@ -42,12 +42,18 @@ async function getTournamentDetails() {
         }
         response.json().then((data) => {
             const bracketHeader = document.getElementById("bracketHeader");
+            var isFinished = false;
+            isFinished = data.isFinished || false;
             bracketHeader.innerText = "Tournament Bracket - ID " + data.id;
+            if (isFinished) {
+                document.getElementById("leaveTournamentBtn").classList.add("d-none");
+                bracketHeader.innerText += " (Finished)";
+            }
             bracketComp.bracket = data;
             playerList.friends = data.players;
             activeTournamentId = data.id;
-            isPlaying = data.isPlaying || false;
-            if (data.isHost && !data.isPlaying) {
+            const isPlaying = data.isPlaying || false;
+            if (data.isHost && !isPlaying) {
                 document
                     .getElementById("startTournamentBtn")
                     .classList.remove("d-none");
@@ -63,10 +69,12 @@ async function getTournamentDetails() {
             } else {
                 document.getElementById("startTournamentBtn").classList.add("d-none");
             }
+            document.getElementById("activeTour").classList.remove("d-none");
+            document.getElementById("actionTour").classList.add("d-none");
+            if (!isFinished) {
+                interval = setTimeout(getTournamentDetails, 5000);
+            }
         });
-        document.getElementById("activeTour").classList.remove("d-none");
-        document.getElementById("actionTour").classList.add("d-none");
-        interval = setTimeout(getTournamentDetails, 5000);
     });
 }
 
