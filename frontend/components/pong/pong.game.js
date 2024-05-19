@@ -68,8 +68,7 @@ export class PongGame {
      * If room code is provided, connect to the room.
      * Otherwise, connect to a new room.
      */
-    connectRoom() {
-        const roomCode = this.document.getElementById("roomCode").value;
+    connectRoom(roomCode = null) {
         let api_url = constants.BACKEND_SOCKET_HOST + constants.BACKEND_SOCKET_API;
         if (roomCode) {
             api_url += roomCode + "/";
@@ -107,7 +106,8 @@ export class PongGame {
         // the `this` context. Otherwise, `this` will refer to the event target.
         // Alternatively, we can use `bind` to bind the `this` context to the callback.
         this.document.getElementById("joinRoomBtn").addEventListener("click", () => {
-            this.connectRoom();
+            const roomCode = this.document.getElementById("roomCode").value;
+            this.connectRoom(roomCode);
         });
         this.document.getElementById("createRoomBtn").addEventListener("click", () => {
             this.connectRoom();

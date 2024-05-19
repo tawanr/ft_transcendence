@@ -46,11 +46,12 @@ async function getTournamentDetails() {
             bracketComp.bracket = data;
             playerList.friends = data.players;
             activeTournamentId = data.id;
-            if (data.isHost) {
+            isPlaying = data.isPlaying || false;
+            if (data.isHost && !data.isPlaying) {
                 document
                     .getElementById("startTournamentBtn")
                     .classList.remove("d-none");
-                if (data.players.length > 3) {
+                if (data.players.length >= 3) {
                     document
                         .getElementById("startTournamentBtn")
                         .classList.remove("disabled");
@@ -150,9 +151,7 @@ function startTournament() {
         return;
     }
     const api_url =
-        constants.BACKEND_HOST +
-        constants.BACKEND_TOURNAMENT_API +
-        activeTournamentIdtournamentId;
+        constants.BACKEND_HOST + constants.BACKEND_TOURNAMENT_API + activeTournamentId;
     fetch(api_url, {
         method: "POST",
         headers: {

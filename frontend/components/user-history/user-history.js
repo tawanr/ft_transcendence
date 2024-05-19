@@ -3,8 +3,6 @@ import { GameHistory } from "../../js/models/game-history.js";
 import { fetchUserHistory } from "../../js/user.js";
 
 class UserHistory extends HTMLElement {
-    static observedAttributes = [];
-
     constructor() {
         super();
         this.shadow = this.attachShadow({ mode: "closed" });
@@ -22,6 +20,9 @@ class UserHistory extends HTMLElement {
     }
 
     set histories(data) {
+        if (!data) {
+            return;
+        }
         this._histories = data;
         this.render(this.html);
     }

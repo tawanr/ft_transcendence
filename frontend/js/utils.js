@@ -56,6 +56,10 @@ export function updateUserNav() {
     }
 }
 
+export async function moveUserActiveGame(roomCode) {
+    window.location.replace("/game");
+}
+
 export async function fetchUserData(token) {
     /**
      * Fetch user data from the backend.
@@ -89,6 +93,10 @@ export async function fetchUserData(token) {
                 localStorage["userAvatar"] = constants.BACKEND_HOST + data.avatar;
             } else {
                 localStorage.removeItem("userAvatar");
+            }
+            if (data.active_game && window.location.pathname !== "/game") {
+                localStorage["activeGame"] = data.active_game;
+                moveUserActiveGame(data.active_game);
             }
             return data.username;
         });

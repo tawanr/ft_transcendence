@@ -18,6 +18,10 @@ class PongElement extends HTMLElement {
 
     attributeChangedCallback(name, oldValue, newValue) {}
 
+    connectRoom(roomCode) {
+        this.game.connectRoom(roomCode);
+    }
+
     setupGame() {
         this.game = new PongGame(this.shadow);
         this.game.renderMode = "3d";
@@ -37,6 +41,10 @@ class PongElement extends HTMLElement {
             },
             false
         );
+        if (localStorage.getItem("activeGame")) {
+            this.game.connectRoom(localStorage.getItem("activeGame"));
+            localStorage.removeItem("activeGame");
+        }
     }
 
     roomBtnHandler() {
