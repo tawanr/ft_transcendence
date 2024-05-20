@@ -17,9 +17,8 @@
 }
 
 .chatRoom {
-    min-width: 500px;
     min-height: 400px;
-    height: 600px;
+    max-height: 600px;
     overflow: auto;
     display: flex;
     flex-direction: column-reverse;

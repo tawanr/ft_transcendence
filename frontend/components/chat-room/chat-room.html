@@ -1,21 +1,16 @@
 <link rel="stylesheet" href="/components/chat-room/chat-room.css" />
 <div class="card w-100">
+    <div class="chatHeader card-header text-center d-none">
+        <span id="cardTitle" class="fw-bold text-center">Chat</span>
+    </div>
     <div class="chatRoom scroll card-body">
         <div id="chatBody" class="list-group list-group-flush">
             <div id="chatList"></div>
         </div>
     </div>
     <form id="chatForm" class="card-footer rounded-top input-group p-1">
-        <input
-            id="chatInput"
-            class="form-control rounded-end"
-            placeholder="Type a message..."
-        />
-        <button
-            id="chatSend"
-            class="btn btn-outline-secondary rounded-start"
-            type="submit"
-        >
+        <input id="chatInput" class="form-control rounded-end" placeholder="Type a message..." />
+        <button id="chatSend" class="btn btn-outline-secondary rounded-start" type="submit">
             Send
         </button>
     </form>

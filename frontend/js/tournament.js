@@ -18,6 +18,7 @@ document.querySelectorAll(".b racketContent").forEach(pointerScroll);
 
 const bracketComp = document.querySelector("bracket-component");
 const playerList = document.querySelector("friend-list");
+const chatroom = document.querySelector("chat-room");
 var interval;
 var activeTournamentId;
 
@@ -52,6 +53,7 @@ async function getTournamentDetails() {
             bracketComp.bracket = data;
             playerList.friends = data.players;
             activeTournamentId = data.id;
+            chatroom.connectChatRoom("tournament", data.id);
             const isPlaying = data.isPlaying || false;
             if (data.isHost && !isPlaying) {
                 document

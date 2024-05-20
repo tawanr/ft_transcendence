@@ -48,7 +48,7 @@ class FriendList extends HTMLElement {
                     <div class="d-flex flex-column justify-content-center">
                         <div class="d-flex flex-row">
                             <div class="text-center friendIcon align-middle">
-                                <a href="#"><img src="static/chat-fill.svg" /></a>
+                                <a href="javascript:void(0)" id="friendChatBtn"><img src="static/chat-fill.svg" /></a>
                             </div>
                             <div id="friendDelBtn" class="text-center friendIcon align-middle">
                                 <a href="#"><img src="static/x-lg.svg" /></a>
@@ -57,6 +57,14 @@ class FriendList extends HTMLElement {
                     </div>
                 </div>
                 `;
+                const chatBtn = friendItem.querySelector("#friendChatBtn");
+                chatBtn.addEventListener("click", () => {
+                    this.connectChat(friend.playerId, friend.playerName);
+                });
+                if (friend.playerName === localStorage.getItem("username")) {
+                    const friendIcon = friendItem.querySelector(".friendIcon");
+                    friendIcon.classList.add("d-none");
+                }
                 friendList.appendChild(friendItem);
             } else {
                 friendItem = friendList.querySelectorAll(".friendlistItem")[i];
@@ -77,6 +85,14 @@ class FriendList extends HTMLElement {
                 element.classList.add("d-none");
             });
         }
+    }
+
+    connectChat(id, name) {
+        const friendChat = this.shadow.querySelector(".friendChat");
+        const chatRoom = friendChat.querySelector("chat-room");
+        chatRoom.setAttribute("title", name);
+        chatRoom.connectChatRoom("private", id);
+        friendChat.classList.remove("d-none");
     }
 
     connectedCallback() {

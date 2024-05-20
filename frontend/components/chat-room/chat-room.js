@@ -1,5 +1,9 @@
 import { fetchHTML } from "../../js/utils.js";
-import { create_chat_socket, websocket_event, send_message } from "./utils_chat_room.js";
+import {
+    create_chat_socket,
+    websocket_event,
+    send_message,
+} from "./utils_chat_room.js";
 
 class ChatRoom extends HTMLElement {
     constructor() {
@@ -7,12 +11,13 @@ class ChatRoom extends HTMLElement {
         this.shadow = this.attachShadow({ mode: "closed" });
         fetchHTML("/components/chat-room/chat-room.html").then((html) => {
             this.html = html;
-            // this.render();
         });
 
-        this.chats = []
+        this.chats = [];
+    }
 
-        this.chatSocket = create_chat_socket();
+    connectChatRoom(roomType, roomName) {
+        this.chatSocket = create_chat_socket(roomType, roomName);
         websocket_event(this);
 
         this.groupChat = this.hasAttribute("group-chat");
@@ -26,6 +31,12 @@ class ChatRoom extends HTMLElement {
         const chatList = this.shadow.getElementById("chatList");
         let currentDate = null;
         let currentSender = "";
+
+        if (this.hasAttribute("title")) {
+            const chatTitle = this.shadow.querySelector(".chatHeader");
+            chatTitle.querySelector("span").textContent = this.getAttribute("title");
+            chatTitle.classList.remove("d-none");
+        }
 
         for (let i = 0; i < this.chats.length; i++) {
             const chat = this.chats[i];

@@ -64,3 +64,11 @@
     margin-right: auto;
     margin-top: 8px;
 }
+
+.friendChat {
+    height: auto;
+}
+
+#friendList {
+    min-height: 250px;
+}
