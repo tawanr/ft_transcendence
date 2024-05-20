@@ -1,21 +1,17 @@
-import asyncio
 import json
 
 from channels.db import database_sync_to_async as db_s2as
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth import get_user_model
 from django.http import JsonResponse
-from django.utils import timezone
 from django.utils.html import escape
 
 from .auth import check_authorization_header, check_authorization_payload
-from .models import Chat, ChatRoom
-from .notification import clear_notification, send_notification
+from .models import Chat
+from .notification import clear_notification
 from .utils_consumers import ActiveUsers as au
-from .utils_consumers import display_chat_history, print_chats_data, save_msg_history
+from .utils_consumers import display_chat_history, save_msg_history
 from .utils_models import get_avatar_url, get_blockUser_obj, get_room_obj, get_user_obj
-
-# from gameplay.models import GamePlayer as gp
 
 User = get_user_model()
 
@@ -27,20 +23,22 @@ class UserConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
         self.user = None
-        self.room_type = self.scope["url_route"]["kwargs"]["room_name"]
-        if self.room_type == "tournament":
-            print(self.scope["headers"])
-            print(self.scope["user"])
-
+        self.room_type = self.scope["url_route"]["kwargs"]["room_type"]
+        self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
         self.room_name = self.room_type
-        self.room_group_name = "chat_%s" % self.room_name
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+
         try:
             await check_authorization_header(self)
         except Exception as e:
             self.ft_send_err("disconnect", str(e))
+        if self.room_type == "tournament":
+            self.room_name = f"{self.room_type}_{self.room_id}"
+            self.room_group_name = "chat_%s" % self.room_name
+            await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        elif self.room_type == "private":
+            pass
 
-    async def save_massage(self, user, sender, room):
+    async def save_message(self, user, sender, room):
         # To create and save an object in a single step, use the create() method.
         await db_s2as(Chat.objects.create)(
             user=user,
@@ -103,20 +101,16 @@ class UserConsumer(AsyncWebsocketConsumer):
         return False
 
     async def receive(self, text_data):
-        print("\nIn receive function!!!")
         try:
             try:
                 self.data = json.loads(text_data)
             except json.JSONDecodeError as e:
-                print("JSON message error:", e)
                 await self.ft_send_err("disconnect", f"JSON message error: {e}")
                 return
 
             await check_authorization_payload(self)
 
-            print("Pass authentication!!!")
             if self.data.get("connect"):
-                print("Connection from browser")
                 return
 
             req_dict = {
@@ -260,7 +254,6 @@ class UserConsumer(AsyncWebsocketConsumer):
         )
 
     async def group_send_msg(self):
-        print("In group_send_msg")
         self.message = escape(self.data["message"])
         self.sender = self.data["sender"]
         self.recipient = self.data["recipient"]
@@ -278,44 +271,40 @@ class UserConsumer(AsyncWebsocketConsumer):
         )
 
     async def chat_message(self, event):
-        print("In chat_message!!!")
         self.sender = event["sender"]
 
         if not au.is_user_active_in_room(self.room_name, self.user):
-            print(f"user is: {self.user}")
             # await send_notification(self, self.user)
             return
 
         # Find room obj
-        room = await get_room_obj(event["room"])
+        # room = await get_room_obj(event["room"])
 
-        self.chats_data = []
-        user = await get_user_obj(self, self.user)
-        chat_query = Chat.objects.filter(user=user, room=room).order_by("timestamp")
-        chat_obj_all = await db_s2as(chat_query.all)()
+        # self.chats_data = []
+        # user = await get_user_obj(self, self.user)
+        # chat_query = Chat.objects.filter(user=user, room=room).order_by("timestamp")
+        # chat_obj_all = await db_s2as(chat_query.all)()
 
-        async for chat in chat_obj_all:
-            time = chat.timestamp
-            time = timezone.localtime(time)
-            # time = time.strftime("%Y-%m-%d %H.%M.%S")
-            time = time.strftime("%Y-%m-%d")
+        # async for chat in chat_obj_all:
+        #     time = chat.timestamp
+        #     time = timezone.localtime(time)
+        #     # time = time.strftime("%Y-%m-%d %H.%M.%S")
+        #     time = time.strftime("%Y-%m-%d")
 
-            self.chats_data.append(
-                {
-                    "senderName": chat.sender,
-                    "message": chat.content,
-                    "date": time,
-                    "isSent": chat.sender == self.sender,
-                }
-            )
-
-        # print_chats_data(self.chats_data)
+        #     self.chats_data.append(
+        #         {
+        #             "senderName": chat.sender,
+        #             "message": chat.content,
+        #             "date": time,
+        #             "isSent": chat.sender == self.sender,
+        #         }
+        #     )
 
         await self.send(
             text_data=json.dumps(
                 {
                     "type": "message",
-                    "chats_data": self.chats_data,
+                    # "chats_data": self.chats_data,
                     "message": event["message"],
                     "sender": self.sender,
                 }
@@ -335,6 +324,12 @@ class UserConsumer(AsyncWebsocketConsumer):
         if self.data.get("chat_history") == "False":
             au.remove_user_from_room(self.room_name, self.user)
             return
+        if self.room_type == "private":
+            users = [int(self.user_id), int(self.room_id)]
+            users.sort()
+            self.room_name = str(users[0]) + "_" + str(users[1])
+            self.room_group_name = "chat_%s" % self.room_name
+            await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.send(
             text_data=json.dumps(
                 {
