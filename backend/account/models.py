@@ -77,5 +77,6 @@ class UserFriendInvite(models.Model):
         unique_together = ["from_user", "to_user"]
 
     def accept(self):
+        print("Accept friends")
         self.from_user.details.friends.add(self.to_user)
         self.delete()

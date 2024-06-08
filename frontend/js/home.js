@@ -5,14 +5,14 @@ const friendlist = document.querySelector("friend-list");
 async function addFriendCallback(username) {
     const result = await addFriend(username);
     if (result) {
-        const friends = fetchFriends();
+        const friends = await fetchFriends();
         friendlist.friends = friends;
     }
     return result;
 }
 
-function setup() {
-    const friends = fetchFriends();
+async function setup() {
+    const friends = await fetchFriends();
     friendlist.friends = friends;
     friendlist.setCallback(addFriendCallback);
 }

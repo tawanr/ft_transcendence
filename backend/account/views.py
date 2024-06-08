@@ -173,6 +173,7 @@ def accept_friend_invite_view(request):
     invite = get_object_or_404(
         UserFriendInvite, from_user=inviter, to_user=request.user
     )
+    print("Accept friends!!!! in accept_friend_invite_view")
     invite.to_user.details.friends.add(invite.from_user.details)
     invite.delete()
     return JsonResponse({"success": True})

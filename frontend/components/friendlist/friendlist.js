@@ -24,8 +24,10 @@ class FriendList extends HTMLElement {
     }
 
     async addFriendSubmit() {
+        console.log("Hello")
         const form = this.shadow.getElementById("friendAddName");
         const friendName = form.value;
+        console.log(friendName);
         if (!friendName) {
             return;
         }
@@ -151,6 +153,7 @@ class FriendList extends HTMLElement {
     }
 
     render(html) {
+        console.log("In render()")
         this.shadow.innerHTML = html;
         if (this.cardTitle) {
             const cardTitle = this.shadow.getElementById("cardTitle");
@@ -162,6 +165,7 @@ class FriendList extends HTMLElement {
         });
         const friendAddSubmit = this.shadow.getElementById("friendAddSubmit");
         friendAddSubmit.addEventListener("click", () => {
+            console.log("Before in addFriendSubmit()")
             this.addFriendSubmit();
         });
     }
