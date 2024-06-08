@@ -40,7 +40,8 @@ export async function fetchFriends() {
         return null;
     }
     const api_url = constants.BACKEND_HOST + "/account/friends/";
-    let friends = [];
+    // let friends = [];
+    let friends = {};
     await fetch(api_url, {
         method: "GET",
         headers: {
@@ -52,7 +53,10 @@ export async function fetchFriends() {
             return [];
         }
         await response.json().then((data) => {
-            friends = data["data"];
+            // friends = data["data"];
+            friends["data"] = data["data"];
+            friends["pending"] = data["pending"];
+            friends["requests"] = data["requests"]
         });
     });
     return friends;
