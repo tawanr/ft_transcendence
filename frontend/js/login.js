@@ -1,7 +1,7 @@
 import { initUser, updateUserNav } from "./utils.js";
 import * as constants from "./constants.js";
 
-const loginForm = document.getElementById("loginForm");
+const loginForm = document.getElementById("loginUser");
 
 loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -12,6 +12,15 @@ loginForm.addEventListener("submit", async (e) => {
     // TODO: Needs sanitization
     await signInAccount(username, password);
     await initUser();
+});
+
+const login42 = document.getElementById("login42");
+
+login42.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    // call 42 login api
+    await signIn42();
 });
 
 async function signInAccount(username, password) {
@@ -37,4 +46,8 @@ async function signInAccount(username, password) {
         .then((data) => {
             localStorage["token"] = data.access_token;
         });
+}
+
+async function signIn42() {
+    // TODO: Implement 42 login
 }
