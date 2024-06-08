@@ -96,6 +96,10 @@ def refresh_token_view(request):
 class FriendsView(View):
     def get(self, request):
         friends = request.user.details.friends.all()
+        pending_requests = request.user.received_invites.select_related(
+            "from_user"
+        ).all()
+        pending_invites = request.user.sent_invites.select_related("to_user").all()
         return JsonResponse(
             {
                 "data": [
@@ -106,7 +110,27 @@ class FriendsView(View):
                         "status": "online",
                     }
                     for friend in friends
-                ]
+                ],
+                "requests": [
+                    {
+                        "playerName": invite.from_user.username,
+                        "playerId": invite.from_user.id,
+                        "avatar": invite.from_user.details.avatar.url
+                        if invite.from_user.details.avatar
+                        else "",
+                    }
+                    for invite in pending_requests
+                ],
+                "pending": [
+                    {
+                        "playerName": invite.to_user.username,
+                        "playerId": invite.to_user.id,
+                        "avatar": invite.to_user.details.avatar.url
+                        if invite.to_user.details.avatar
+                        else "",
+                    }
+                    for invite in pending_invites
+                ],
             }
         )
 

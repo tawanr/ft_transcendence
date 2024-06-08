@@ -5,7 +5,7 @@ from . import views
 urlpatterns = [
     path("tournament/", views.user_tournament, name="user_tournament"),
     path(
-        "tournament/player/",
+        "tournament/<int:tournament_id>/player/",
         views.add_player_to_tournament,
         name="add_player_to_tournament",
     ),

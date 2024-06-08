@@ -160,7 +160,7 @@ class Tournament(models.Model):
     async def get_games(self, level=None, is_active=False):
         qs = GameRoom.objects.filter(
             tournament=self,
-        ).order_by("-created_date")
+        ).order_by("created_date")
         if is_active:
             qs = qs.filter(is_active=is_active)
         if level:

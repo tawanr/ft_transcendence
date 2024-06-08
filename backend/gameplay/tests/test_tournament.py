@@ -64,7 +64,7 @@ class TestTournament(TestCase):
         data = response.json()
         self.assertEqual(data["id"], self.tournament.id)
         self.assertEqual(data["isHost"], True)
-        self.assertEqual(data["isStarted"], False)
+        self.assertEqual(data["isPlaying"], False)
 
         # Test leaving a tournament
         response = self.client.delete(url, HTTP_AUTHORIZATION=f"Bearer {token}")
@@ -138,10 +138,10 @@ class TestTournament(TestCase):
         url = reverse("tournament_detail", kwargs={"tournament_id": self.tournament.id})
         token, _ = generate_user_token(self.users[0])
         response = self.client.get(url, HTTP_AUTHORIZATION=f"Bearer {token}")
-        print(f"{response.json()=}")
         expected = {
             "id": self.tournament.id,
             "size": 4,
+            "isPlaying": True,
             "bracket": [
                 {
                     "finished": False,

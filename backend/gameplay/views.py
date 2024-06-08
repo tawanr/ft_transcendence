@@ -1,4 +1,5 @@
 import json
+import stat
 
 from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
@@ -201,11 +202,26 @@ def join_tournament(request, tournament_id: int):
 
 @require_POST
 @login_required_401
-async def add_player_to_tournament(request):
+async def add_player_to_tournament(request, tournament_id: int):
     try:
         payload = json.loads(request.body)
         username = payload.get("username")
-        tournament = await Tournament.objects.aget(game_type="pong")
+        tournament = await Tournament.objects.filter(
+            id=tournament_id,
+            is_active=True,
+            is_playing=False,
+            is_finished=False,
+            game_type="pong",
+        ).first()
+
+        if not tournament:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Tournament not valid",
+                },
+                status=404,
+            )
 
         user_obj = await User.objects.aget(username=username)
 
