@@ -36,11 +36,7 @@ export function websocket_event(context) {
 export function send_message(context, message) {
     var sender = localStorage.getItem("username");
     //Temporaly use dummy as list of user in tournament, wait for real var from P'Tan
-    var dummy = ["test_user55", "test_user2", "test_user3"];
     var recipient = [];
-    for (const user of dummy) {
-        if (user !== sender) recipient.push(user);
-    }
     context.chatSocket.send(
         JSON.stringify({
             message: message,

@@ -12,6 +12,44 @@ class FriendList extends HTMLElement {
         this.cardTitle = this.getAttribute("title");
     }
 
+    addFriendToggle() {
+        const addFriendDialog = this.shadow.querySelector(".addFriendDialog");
+        addFriendDialog.classList.toggle("d-none");
+    }
+
+    async addBtnFn(friendName) {
+        if (this.addCallback) {
+            return await this.addCallback(friendName);
+        }
+    }
+
+    async addFriendSubmit() {
+        const form = this.shadow.getElementById("friendAddName");
+        const friendName = form.value;
+        if (!friendName) {
+            return;
+        }
+        const result = await this.addBtnFn(friendName);
+        if (!result) {
+            form.classList.add("is-invalid");
+        } else {
+            form.classList.remove("is-invalid");
+            form.value = "";
+        }
+    }
+
+    setCallback(callback) {
+        this.addCallback = callback;
+    }
+
+    get invites() {
+        return this._invites;
+    }
+
+    set invites(data) {
+        this._invites = data;
+    }
+
     get friends() {
         return this._friends;
     }
@@ -99,6 +137,7 @@ class FriendList extends HTMLElement {
         this._friends = [];
         this.friendDelBtn = this.hasAttribute("friend-del-btn");
         this.friendStatusBadge = this.hasAttribute("show-status");
+        this.friendAddBtn = this.hasAttribute("friend-add-btn");
     }
 
     getStatusBadge(player) {
@@ -117,6 +156,14 @@ class FriendList extends HTMLElement {
             const cardTitle = this.shadow.getElementById("cardTitle");
             cardTitle.innerText = this.cardTitle;
         }
+        const addFriendBtn = this.shadow.getElementById("friendAddBtn");
+        addFriendBtn.addEventListener("click", () => {
+            this.addFriendToggle();
+        });
+        const friendAddSubmit = this.shadow.getElementById("friendAddSubmit");
+        friendAddSubmit.addEventListener("click", () => {
+            this.addFriendSubmit();
+        });
     }
 }
 

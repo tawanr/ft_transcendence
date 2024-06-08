@@ -3,8 +3,27 @@
     <chat-room></chat-room>
 </div>
 <div class="card w-100 mb-5">
-    <div class="card-header text-center">
-        <span id="cardTitle" class="fw-bold text-center">Friend List</span>
+    <div class="d-flex card-header text-center justify-content-around">
+        <div class="flex-column" style="padding-right: 25px"></div>
+        <span id="cardTitle" class="flex-column mx-auto fw-bold text-center">Friend List</span>
+        <div class="d-flex flex-column justify-content-center">
+            <a href="javascript:void(0);" id="friendAddBtn">
+                <img src="static/plus.svg" height="25px" width="25px" />
+            </a>
+        </div>
+    </div>
+    <div class="addFriendDialog w-100 d-none d-flex flex-row justify-content-around p-3">
+        <div class="col-auto d-flex flex-column flex-grow-1">
+            <input class="form-control form-control-sm w-100" id="friendAddName" type="text" placeholder="Username"
+                aria-describedby="validationUserAdd" required />
+            <div id="validationUserAdd" class="invalid-feedback">Invalid Username</div>
+        </div>
+        <div class="col-auto ms-3">
+            <button type="submit" class="btn btn-primary btn-sm" id="friendAddSubmit">Add</button>
+        </div>
+    </div>
+    <div class="invitelistScroll scroll h-100">
+        <ul id="inviteList" class="list-group list-group-flush"></ul>
     </div>
     <div class="friendlistScroll scroll h-100">
         <ul id="friendList" class="list-group list-group-flush"></ul>

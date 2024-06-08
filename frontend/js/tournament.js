@@ -22,6 +22,10 @@ const chatroom = document.querySelector("chat-room");
 var interval;
 var activeTournamentId;
 
+async function addPlayerCallback(friendName) {
+    return false;
+}
+
 async function getTournamentDetails() {
     const token = getUserToken();
     if (!token) {
@@ -48,10 +52,12 @@ async function getTournamentDetails() {
             bracketHeader.innerText = "Tournament Bracket - ID " + data.id;
             if (isFinished) {
                 document.getElementById("leaveTournamentBtn").classList.add("d-none");
+                document.getElementById("actionTour").classList.remove("d-none");
                 bracketHeader.innerText += " (Finished)";
             }
             bracketComp.bracket = data;
             playerList.friends = data.players;
+            playerList.setCallback(addPlayerCallback);
             activeTournamentId = data.id;
             chatroom.connectChatRoom("tournament", data.id);
             const isPlaying = data.isPlaying || false;
@@ -72,7 +78,6 @@ async function getTournamentDetails() {
                 document.getElementById("startTournamentBtn").classList.add("d-none");
             }
             document.getElementById("activeTour").classList.remove("d-none");
-            document.getElementById("actionTour").classList.add("d-none");
             if (!isFinished) {
                 interval = setTimeout(getTournamentDetails, 5000);
             }
