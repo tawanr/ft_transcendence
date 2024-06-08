@@ -166,9 +166,6 @@ class FriendList extends HTMLElement {
                             <div class="text-center friendIcon align-middle">
                                 <a href="javascript:void(0)" id="friendAllowBtn"><img src="static/check.svg" /></a>
                             </div>
-                            <div id="friendDelBtn" class="text-center friendIcon align-middle">
-                                <a href="#"><img src="static/x-lg.svg" /></a>
-                            </div>
                         </div>
                     </div>
                 </div>

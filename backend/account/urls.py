@@ -12,4 +12,5 @@ urlpatterns = [
     path("friends/", views.FriendsView.as_view(), name="friends"),
     path("friends/accept/", views.accept_friend_invite_view, name="invite_accept"),
     path("history/", views.list_game_history, name="history_list"),
+    path("friends/block/", views.block_friend_view, name="block_friend"),
 ]

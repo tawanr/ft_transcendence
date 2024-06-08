@@ -173,10 +173,22 @@ def accept_friend_invite_view(request):
     invite = get_object_or_404(
         UserFriendInvite, from_user=inviter, to_user=request.user
     )
-    print("Accept friends!!!! in accept_friend_invite_view")
     invite.to_user.details.friends.add(invite.from_user.details)
     invite.delete()
     return JsonResponse({"success": True})
+
+
+###############################################################
+@login_required_401
+@require_POST
+def block_friend_view(request):
+    print("In block_friend_view!!!!!!!")
+    payload = json.loads(request.body)
+    friend_to_remove = get_object_or_404(User, username=payload["username"])
+    print(f"friend_to_remove = {friend_to_remove.details}")
+    request.user.details.friends.remove(friend_to_remove.details)
+    return JsonResponse({"success": True})
+###############################################################
 
 
 @login_required_401
