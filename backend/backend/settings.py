@@ -29,6 +29,9 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "backend",
     "localhost",
+    "10.19.244.230",
+    "127.0.0.1",
+    "[::1]"
 ]
 
 
@@ -153,11 +156,21 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOW_CREDENTIALS = True
 FRONTEND_PORT = os.environ.get("FRONTEND_PORT", "80")
-FRONTEND_HOST = "http://" + os.environ.get("HOST", "localhost") + ":" + FRONTEND_PORT
-CORS_ALLOWED_ORIGINS = [
-    FRONTEND_HOST,
-    "http://127.0.0.1:" + FRONTEND_PORT,
-    "http://" + os.environ.get("HOST", "localhost"),
+FRONTEND_HOST = "http://" + \
+    os.environ.get("HOST", "localhost") + ":" + FRONTEND_PORT
+CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOWED_ORIGINS = [
+#     FRONTEND_HOST,
+#     "http://127.0.0.1:" + FRONTEND_PORT,
+#     "http://" + os.environ.get("HOST", "localhost"),
+#     "http://10.19.244.230:" + FRONTEND_PORT,
+#     # "http://10.19.244.230:" + FRONTEND_PORT,
+# ]
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r'^http://0.0.0.10/.19/.244/d%7B1,3%7D(:/d+)?$', ]
+CORS_ORIGIN_WHITELIST = [
+    "http://10.19.244.*"
 ]
 SESSION_COOKIE_SAMESITE = "None"
 
@@ -211,4 +224,5 @@ LOGGING = {
     },
 }
 
-DEFAULT_AVATAR = os.environ.get("DEFAULT_AVATAR", "uploads/avatars/42_Logo.png")
+DEFAULT_AVATAR = os.environ.get(
+    "DEFAULT_AVATAR", "uploads/avatars/42_Logo.png")

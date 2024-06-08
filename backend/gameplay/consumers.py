@@ -80,6 +80,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             self.host = True
 
     async def receive(self, text_data):
+        print("Gameplay in receive function")
         data = json.loads(text_data)
 
         try:
@@ -117,7 +118,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
                     self.game_group_name,
                     self.channel_name,
                 )
-
+                print("Before send function")
                 await self.send(
                     text_data=json.dumps(
                         {
@@ -141,6 +142,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
             **data,
             "player_id": self.player_id,
         }
+        print("Before group send")
         await self.channel_layer.group_send(
             self.game_group_name,
             message,
@@ -170,6 +172,7 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         for player in self.game.players:
             if not player.ready:
                 return
+        # print("Player ready!!!!!!")
         await self.game.start()
         asyncio.create_task(self.game_loop())
 
