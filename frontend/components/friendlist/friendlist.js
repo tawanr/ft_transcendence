@@ -1,4 +1,5 @@
-import { fetchHTML } from "../../js/utils.js";
+import { fetchHTML, getUserToken } from "../../js/utils.js";
+import * as constants from "../../js/constants.js";
 
 class FriendList extends HTMLElement {
     constructor() {
@@ -174,7 +175,8 @@ class FriendList extends HTMLElement {
                 `;
                 const chatBtn = friendItem.querySelector("#friendAllowBtn");
                 chatBtn.addEventListener("click", () => {
-                    this.connectChat(friend.playerId, friend.playerName);
+                    // this.connectChat(friend.playerId, friend.playerName);
+                    this.allowRequest(friend.playerId, friend.playerName);
                 });
                 if (friend.playerName === localStorage.getItem("username")) {
                     const friendIcon = friendItem.querySelector(".friendIcon");
@@ -187,7 +189,7 @@ class FriendList extends HTMLElement {
             friendItem.querySelector(".avatar").src = friend.avatar;
             friendItem.querySelector(".date").innerText = friend.playerName;
             friendItem.querySelector(".friendStatus").innerHTML =
-                this.getStatusBadge(friend);
+                "Pending";
         }
 
         // if (!this.friendStatusBadge) {
@@ -318,6 +320,31 @@ class FriendList extends HTMLElement {
             console.log("Before in addFriendSubmit()")
             this.addFriendSubmit();
         });
+    }
+
+    async allowRequest(id, name) {
+        const token = getUserToken();
+        if (!token) {
+            return false;
+        }
+        const api_url = constants.BACKEND_HOST + "/account/friends/accept/";
+        let result = false;
+        await fetch(api_url, {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer " + token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username: name }),
+        }).then(async (response) => {
+            if (response.status !== 200) {
+                console.error("Error accepting friend");
+                result = false;
+            } else {
+                result = true;
+            }
+        });
+        return result;
     }
 }
 
