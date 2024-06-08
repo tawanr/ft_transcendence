@@ -50,4 +50,18 @@ async function signInAccount(username, password) {
 
 async function signIn42() {
     // TODO: Implement 42 login
+    const api_url = constants.BACKEND_HOST + "/account/oauth42/";
+    const response = await fetch(api_url)
+
+    console.log(response)
+    // .then((response) => {
+    //     if (response.status === 200) {
+    //         history.pushState({}, "", "/");
+    //         window.dispatchEvent(new PopStateEvent("popstate"));
+    //     }
+    //     return response.json();
+    // })
+    // .then((data) => {
+    //     localStorage["token"] = data.access_token;
+    // });
 }

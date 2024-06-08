@@ -30,6 +30,7 @@ ALLOWED_HOSTS = [
     "backend",
     "localhost",
     "10.19.244.230",
+    "10.19.248.133",
     "127.0.0.1",
     "[::1]"
 ]
@@ -168,9 +169,11 @@ CORS_ALLOW_ALL_ORIGINS = True
 # ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r'^http://0.0.0.10/.19/.244/d%7B1,3%7D(:/d+)?$', ]
+    r'^http://10\.19\.\d{1,3}\.\d{1,3}(:\d+)?$',
+]
+
 CORS_ORIGIN_WHITELIST = [
-    "http://10.19.244.*"
+    "http://10.19.*.*:*",
 ]
 SESSION_COOKIE_SAMESITE = "None"
 
@@ -226,3 +229,6 @@ LOGGING = {
 
 DEFAULT_AVATAR = os.environ.get(
     "DEFAULT_AVATAR", "uploads/avatars/42_Logo.png")
+
+CLIENT_ID = os.environ.get("CLIENT_ID")
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET")

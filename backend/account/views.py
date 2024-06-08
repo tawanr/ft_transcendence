@@ -1,10 +1,15 @@
+import binascii
 import json
 import jwt
+import os
+import requests
+import time
+from uuid import uuid4
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.http import require_GET, require_POST
@@ -15,6 +20,8 @@ from account.models import UserFriendInvite, UserToken
 from account.services import generate_user_token, handle_upload_avatar
 from backend.decorators import login_required_401
 
+# AUTHEN_42_URL = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-eb16615eeae12cb0c925ccb880a7b21c759357722b29dce6158a2c948c364dae&redirect_uri=http%3A%2F%2F10.19.248.133%3A8000%2Faccount%2Fredirect42%2F&response_type=code'
+AUTHEN_42_URL = 'https://api.intra.42.fr/oauth/authorize'
 
 @require_GET
 @login_required_401
@@ -229,19 +236,25 @@ def avatar_upload_view(request):
         )
     return JsonResponse({"success": False, "errors": form.errors})
 
-auth_rul_42 = "https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-eb16615eeae12cb0c925ccb880a7b21c759357722b29dce6158a2c948c364dae&redirect_uri=http%3A%2F%2F127.0.0.1%3A8000%2Foauth2%2Flogin%2Fredirect&response_type=code"
-
 def authen42(request):
-    return redirect(auth_rul_42)
+    # construct auth url
+    auth_url = 'https://api.intra.42.fr/oauth/authorize'
+    client_id = os.environ.get('CLIENT_ID')
+    redirect_uri = request.META.get( 'HTTP_HOST' ) + '/account/redirect42/'
+
+    auth_url += f'?client_id={client_id}&redirect_uri=http%3A%2F%2F{redirect_uri}&response_type=code'
+
+    return redirect(auth_url)
 
 def authen42_redirect(request):
     code = request.GET.get('code')
     # Get user info
-    user_info = exchange_code(code)
+    redirect_uri = request.META.get( 'HTTP_HOST' ) + '/account/redirect42/'
+    user_info = exchange_code(code, redirect_uri)
     # create data info form
     form_data = {
         'username':user_info['first_name'],
-        'password':NULL,
+        'password': None,
         'email':user_info['email']
     }
     # Check whether user is already register or not
@@ -278,20 +291,27 @@ def authen42_redirect(request):
     response.set_cookie("refresh_token", refresh_token, httponly=True, secure=True)
     return response
 
-def exchange_code(code):
+def exchange_code(code, redirect_uri):
     print(f"show code in fn {code}")
     data = {
         'grant_type': 'authorization_code',
         'client_id': settings.CLIENT_ID,
         'client_secret': settings.CLIENT_SECRET,
         'code': code,
-        'redirect_uri': 'http://127.0.0.1:8000/account/redirect42/',
+        'redirect_uri': redirect_uri,
     }
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'
     }
-    response = requests.request("POST", "https://api.intra.42.fr/oauth/token", headers=headers, data=data)
+
+    token_uri = 'https://api.intra.42.fr/oauth/token'
+
+    response = requests.request("POST", token_uri, headers=headers, data=data)
+    print( '=' * 100)
+    print( token_uri )
+    print( response )
     credentials = response.json()
+    print( credentials )
     access_token = credentials['access_token']
     response = requests.get("https://api.intra.42.fr/v2/me", headers={
         'Authorization': 'Bearer %s' % access_token
