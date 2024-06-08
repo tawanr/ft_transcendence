@@ -42,6 +42,7 @@ def register_view(request):
     if not form.is_valid():
         return JsonResponse({"success": False, "errors": form.errors})
     User.objects.create_user(**form.cleaned_data, is_active=True)
+    print(f"user name is = {form}")
     return JsonResponse(form.cleaned_data)
 
 
@@ -71,7 +72,8 @@ def login_view(request):
     access_token, refresh_token = generate_user_token(user)
     rtn = {"access_token": access_token}
     response = JsonResponse(rtn)
-    response.set_cookie("refresh_token", refresh_token, httponly=True, secure=True)
+    response.set_cookie("refresh_token", refresh_token,
+                        httponly=True, secure=True)
     return response
 
 
@@ -99,7 +101,8 @@ class FriendsView(View):
         pending_requests = request.user.received_invites.select_related(
             "from_user"
         ).all()
-        pending_invites = request.user.sent_invites.select_related("to_user").all()
+        pending_invites = request.user.sent_invites.select_related(
+            "to_user").all()
         return JsonResponse(
             {
                 "data": [
