@@ -48,8 +48,6 @@ services:
       - ./frontend/:/frontend/
     networks:
       - transcendence
-    # environment:
-    #   BACKEND_SERVER_IP: $(BACKEND_SERVER_IP)
 
   db:
     image: postgres:latest
@@ -261,5 +259,3 @@ services:
 networks:
   transcendence:
 
-# environment:
-#   BACKEND_SERVER_IP: 10.19.244.230
