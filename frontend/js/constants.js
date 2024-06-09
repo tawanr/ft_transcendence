@@ -13,6 +13,8 @@ export const BACKEND_SOCKET_HOST = `wss://${BACKEND_SERVER_IP}/wsapi`;
 export const BACKEND_SOCKET_API = "/ws/gameplay/";
 export const BACKEND_CHATSOCKET_API = "/ws/user/";
 export const BACKEND_TOURNAMENT_API = "/gameplay/tournament/";
+export const BACKEND_CHATROOM_API = "/ws/chatroom/";
+
 
 // GAME DEFAULT VALUES
 export const PLAYER_LEFT_OFFSET = 40;
