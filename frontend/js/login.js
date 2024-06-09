@@ -26,7 +26,7 @@ login42.addEventListener("click", async (e) => {
 async function signInAccount(username, password) {
     const api_url = constants.BACKEND_HOST + "/account/login/";
     await fetch(api_url, {
-        method: "POST",
+        method: "GET",
         headers: {
             "Content-Type": "application/json",
         },
@@ -49,19 +49,28 @@ async function signInAccount(username, password) {
 }
 
 async function signIn42() {
-    // TODO: Implement 42 login
+    console.log("42 login")
     const api_url = constants.BACKEND_HOST + "/account/oauth42/";
-    const response = await fetch(api_url)
+    try {
+        const response = await fetch(api_url);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        console.log(data); // Print the response data to debug
 
-    console.log(response)
-    // .then((response) => {
-    //     if (response.status === 200) {
-    //         history.pushState({}, "", "/");
-    //         window.dispatchEvent(new PopStateEvent("popstate"));
-    //     }
-    //     return response.json();
-    // })
-    // .then((data) => {
-    //     localStorage["token"] = data.access_token;
-    // });
+        const authUrl = data.auth_url;
+        if (!authUrl) {
+            throw new Error('auth_url not found in response');
+        }
+
+        // Redirect the user to the authorization URL
+        window.location.href = authUrl;
+    } catch (error) {
+        console.error('There was a problem with the fetch operation:', error);
+    }
+
+    // console.log(response)
+
+
 }

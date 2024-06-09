@@ -32,7 +32,8 @@ ALLOWED_HOSTS = [
     "10.19.244.230",
     "10.19.248.133",
     "127.0.0.1",
-    "[::1]"
+    "[::1]",
+	"https://api.intra.42.fr/*",
 ]
 
 
@@ -170,11 +171,20 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r'^http://10\.19\.\d{1,3}\.\d{1,3}(:\d+)?$',
+    r'^http://localhost(:\d+)?$',
+    r'^http://127\.0\.0\.1(:\d+)?$',
+    r'^http://api\.intra\.42\.fr(:\d+)?$',
 ]
 
+# CORS_ORIGIN_WHITELIST = [
+#     "http://10.19.*.*:*",
+# ]
+
 CORS_ORIGIN_WHITELIST = [
-    "http://10.19.*.*:*",
+    "http://*",
+    "https://api.intra.42.fr",
 ]
+
 SESSION_COOKIE_SAMESITE = "None"
 
 JWT_KEY = os.environ.get("JWT_KEY")
