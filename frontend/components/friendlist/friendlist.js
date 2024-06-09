@@ -96,7 +96,7 @@ class FriendList extends HTMLElement {
                                 <a href="javascript:void(0)" id="friendChatBtn"><img src="static/chat-fill.svg" /></a>
                             </div>
                             <div id="friendDelBtn" class="text-center friendIcon align-middle">
-                                <a href="#"><img src="static/x-lg.svg" /></a>
+                                <a href="javascript:void(0)"><img src="static/x-lg.svg" /></a>
                             </div>
                         </div>
                     </div>
@@ -105,6 +105,10 @@ class FriendList extends HTMLElement {
                 const chatBtn = friendItem.querySelector("#friendChatBtn");
                 chatBtn.addEventListener("click", () => {
                     this.connectChat(friend.playerId, friend.playerName);
+                });
+                const delBtn = friendItem.querySelector("#friendDelBtn");
+                delBtn.addEventListener("click", async () => {
+                    this.deleteFriend(friend.playerName);
                 });
                 if (friend.playerName === localStorage.getItem("username")) {
                     const friendIcon = friendItem.querySelector(".friendIcon");
@@ -336,6 +340,31 @@ class FriendList extends HTMLElement {
         }).then(async (response) => {
             if (response.status !== 200) {
                 console.error("Error accepting friend");
+                result = false;
+            } else {
+                result = true;
+            }
+        });
+        return result;
+    }
+
+    async deleteFriend(friendName) {
+        const token = getUserToken();
+        if (!token) {
+            return false;
+        }
+        const api_url = constants.BACKEND_HOST + "/account/friends/block/";
+        let result = false;
+        await fetch(api_url, {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer " + token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username: friendName }),
+        }).then(async (response) => {
+            if (response.status !== 200) {
+                console.error("Error deleting friend");
                 result = false;
             } else {
                 result = true;

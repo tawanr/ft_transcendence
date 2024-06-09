@@ -138,6 +138,7 @@ class FriendsView(View):
         )
 
     def post(self, request):
+        print("###### In Post add friend #######")
         payload = json.loads(request.body)
         friend = User.objects.filter(username=payload["username"]).first()
         if not friend:
@@ -145,7 +146,8 @@ class FriendsView(View):
                 {"success": False, "errors": {"username": "Username does not exist"}},
                 status=400,
             )
-        if friend == request.user.details:
+        if payload["username"] == request.user.username:
+            print("!!!!!!! Cannot add yourself !!!!!!")
             return JsonResponse(
                 {"success": False, "errors": {"username": "Cannot add yourself"}},
                 status=400,
