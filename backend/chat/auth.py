@@ -7,7 +7,7 @@ from .utils_consumers import ActiveUsers as au
 
 
 async def check_authorization_header(self):
-    print("In check_auth function!!!")
+    # print("In check_auth function!!!")
     # Extract JWT token from the Authorization header
     # Retrieve Authorization header from headers
     # Decodes the bytes obj value of the "Authorization" header into a UTF-8 str
@@ -52,7 +52,8 @@ async def check_authorization_header(self):
         # name: username
         # iat: issue at => time token was issued
         # exp: expiration time in unix time
-        decoded_token = jwt.decode(jwt_token, settings.JWT_KEY, algorithms=["HS256"])
+        decoded_token = jwt.decode(
+            jwt_token, settings.JWT_KEY, algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
         # Token has expired, close the connection
         print("JWT token has expired!!!")
@@ -66,7 +67,7 @@ async def check_authorization_header(self):
     # Extract user ID from the decoded token
     user_id = decoded_token["name"]
     self.user = user_id
-    print(f"Checking {self.user = }")
+    # print(f"Checking {self.user = }")
 
     if not self.user:
         print("User is invalid!!!")
@@ -74,18 +75,15 @@ async def check_authorization_header(self):
         return
 
     # await send_notification(self, self.user)
-    print(f"Connect from user_id: {self.user}")
+    # print(f"Connect from user_id: {self.user}")
 
 
 async def check_authorization_payload(self):
-    print("In check auth payload!!!")
+    # print("In check auth payload!!!")
     if self.user:
         pass
     elif authorization := self.data.get("authorization"):
         self.user, self.user_id = await check_jwt(self, authorization)
-        if self.user:
-            # await send_notification(self, self.user)
-            print("After send noti")
     else:
         print("Invalid authentication!!!")
         await self.ft_send_err(
@@ -95,7 +93,7 @@ async def check_authorization_payload(self):
 
 
 async def check_jwt(self, token):
-    print("Check jwt!!!")
+    # print("Check jwt!!!")
     token = (
         await UserToken.objects.filter(access_token=token)
         .select_related("user")
@@ -108,5 +106,5 @@ async def check_jwt(self, token):
         )
         raise self.CustomException("Unauthorized")
     else:
-        print("Pass auth")
+        # print("Pass auth")
         return token.user.username, token.user.id

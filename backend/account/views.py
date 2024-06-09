@@ -138,7 +138,7 @@ class FriendsView(View):
         )
 
     def post(self, request):
-        print("###### In Post add friend #######")
+        # print("###### In Post add friend #######")
         payload = json.loads(request.body)
         friend = User.objects.filter(username=payload["username"]).first()
         if not friend:
@@ -184,7 +184,7 @@ def accept_friend_invite_view(request):
 @login_required_401
 @require_POST
 def block_friend_view(request):
-    print("In block_friend_view!!!!!!!")
+    # print("In block_friend_view!!!!!!!")
     payload = json.loads(request.body)
     friend_to_remove = get_object_or_404(User, username=payload["username"])
     print(f"friend_to_remove = {friend_to_remove.details}")
