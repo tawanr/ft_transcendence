@@ -3,7 +3,7 @@
 // export const BACKEND_HOST = `http://${BACKEND_HOST_VAR}:8000`;
 // export const BACKEND_SOCKET_HOST = `ws://${BACKEND_HOST_VAR}:8000`;
 export const BACKEND_SERVER_IP = "10.19.244.230";
-export const BACKEND_HOST = `http://${BACKEND_SERVER_IP}:8000`;
+export const BACKEND_HOST = `https://${BACKEND_SERVER_IP}:8000`;
 export const BACKEND_SOCKET_HOST = `ws://${BACKEND_SERVER_IP}:8000`;
 // export const BACKEND_HOST = "http://localhost:8000";
 // export const BACKEND_SOCKET_HOST = "ws://localhost:8000";
