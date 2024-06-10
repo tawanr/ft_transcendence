@@ -9,9 +9,6 @@ async function addFriendCallback(username) {
         friendlist.friends = friends_data["data"];
         friendlist.pending = friends_data["pending"];
         friendlist.requests = friends_data["requests"];
-
-        // const friends = await fetchFriends();
-        // friendlist.friends = friends;
     }
     return result;
 }
@@ -22,8 +19,6 @@ async function setup() {
     friendlist.pending = friends_data["pending"];
     friendlist.requests = friends_data["requests"];
 
-    // const friends = await fetchFriends();
-    // friendlist.friends = friends;
     friendlist.setCallback(addFriendCallback);
 }
 
