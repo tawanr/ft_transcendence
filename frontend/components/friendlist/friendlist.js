@@ -368,6 +368,7 @@ class FriendList extends HTMLElement {
                 result = false;
             } else {
                 result = true;
+                window.location.reload();
             }
         });
         return result;
