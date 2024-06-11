@@ -37,16 +37,17 @@ services:
     command: python manage.py migrate && python manage.py runserver 0.0.0.0:8000
 
   frontend:
-    image: nginx
+    # image: nginx
+    build: ./frontend
     ports:
-      - "${FRONTEND_PORT}:80"
+      - "80:80"
+      - "443:443"
+      # - "${FRONTEND_PORT}:80"
     volumes:
       - ./nginx/:/etc/nginx/conf.d/
       - ./frontend/:/frontend/
     networks:
       - transcendence
-    # environment:
-    #   BACKEND_SERVER_IP: $(BACKEND_SERVER_IP)
 
   db:
     image: postgres:latest
@@ -258,5 +259,3 @@ services:
 networks:
   transcendence:
 
-# environment:
-#   BACKEND_SERVER_IP: 10.19.244.230

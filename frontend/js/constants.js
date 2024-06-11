@@ -1,17 +1,13 @@
 // SERVER CONFIGS
-// export const BACKEND_HOST_VAR = "10.19.244.230";
-// export const BACKEND_HOST = `http://${BACKEND_HOST_VAR}:8000`;
-// export const BACKEND_SOCKET_HOST = `ws://${BACKEND_HOST_VAR}:8000`;
-// export const BACKEND_SERVER_IP = "127.0.0.1";
-export const BACKEND_SERVER_IP = "10.19.248.133";
-// export const BACKEND_SERVER_IP = "10.19.244.230";
-export const BACKEND_HOST = `http://${BACKEND_SERVER_IP}:8000`;
-export const BACKEND_SOCKET_HOST = `ws://${BACKEND_SERVER_IP}:8000`;
-// export const BACKEND_HOST = "http://localhost:8000";
-// export const BACKEND_SOCKET_HOST = "ws://localhost:8000";
+export const BACKEND_SERVER_IP = location.hostname;
+
+export const BACKEND_HOST = `https://${BACKEND_SERVER_IP}/api`;
+export const BACKEND_SOCKET_HOST = `wss://${BACKEND_SERVER_IP}/wsapi`;
 export const BACKEND_SOCKET_API = "/ws/gameplay/";
 export const BACKEND_CHATSOCKET_API = "/ws/user/";
 export const BACKEND_TOURNAMENT_API = "/gameplay/tournament/";
+export const BACKEND_CHATROOM_API = "/ws/chatroom/";
+
 
 // GAME DEFAULT VALUES
 export const PLAYER_LEFT_OFFSET = 40;

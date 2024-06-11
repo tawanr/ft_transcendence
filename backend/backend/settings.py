@@ -30,10 +30,7 @@ ALLOWED_HOSTS = [
     "backend",
     "localhost",
     "10.19.244.230",
-    "10.19.248.133",
-    "127.0.0.1",
-    "[::1]",
-	"https://api.intra.42.fr/*",
+    "*",
 ]
 
 
@@ -158,7 +155,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOW_CREDENTIALS = True
 FRONTEND_PORT = os.environ.get("FRONTEND_PORT", "80")
-FRONTEND_HOST = "http://" + \
+FRONTEND_HOST = "https://" + \
     os.environ.get("HOST", "localhost") + ":" + FRONTEND_PORT
 CORS_ALLOW_ALL_ORIGINS = True
 # CORS_ALLOWED_ORIGINS = [
@@ -170,19 +167,13 @@ CORS_ALLOW_ALL_ORIGINS = True
 # ]
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r'^http://10\.19\.\d{1,3}\.\d{1,3}(:\d+)?$',
-    r'^http://localhost(:\d+)?$',
-    r'^http://127\.0\.0\.1(:\d+)?$',
-    r'^http://api\.intra\.42\.fr(:\d+)?$',
-]
-
-# CORS_ORIGIN_WHITELIST = [
-#     "http://10.19.*.*:*",
-# ]
-
+    r'^http://0.0.0.10/.19/.244/d%7B1,3%7D(:/d+)?$',
+    r'^htts://0.0.0.10/.19/.244/d%7B1,3%7D(:/d+)?$', ]
 CORS_ORIGIN_WHITELIST = [
+    "http://10.19.*",
+    "https://10.19.*",
     "http://*",
-    "https://api.intra.42.fr",
+    "https://*"
 ]
 
 SESSION_COOKIE_SAMESITE = "None"
@@ -239,6 +230,8 @@ LOGGING = {
 
 DEFAULT_AVATAR = os.environ.get(
     "DEFAULT_AVATAR", "uploads/avatars/42_Logo.png")
+
+# SECURE_SSL_REDIRECT = True
 
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")

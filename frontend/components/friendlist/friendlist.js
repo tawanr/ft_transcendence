@@ -1,4 +1,5 @@
-import { fetchHTML } from "../../js/utils.js";
+import { fetchHTML, getUserToken } from "../../js/utils.js";
+import * as constants from "../../js/constants.js";
 
 class FriendList extends HTMLElement {
     constructor() {
@@ -24,8 +25,10 @@ class FriendList extends HTMLElement {
     }
 
     async addFriendSubmit() {
+        console.log("Hello")
         const form = this.shadow.getElementById("friendAddName");
         const friendName = form.value;
+        console.log(friendName);
         if (!friendName) {
             return;
         }
@@ -48,6 +51,10 @@ class FriendList extends HTMLElement {
 
     set invites(data) {
         this._invites = data;
+    }
+
+    get requests() {
+        return this._requests;
     }
 
     get friends() {
@@ -89,7 +96,7 @@ class FriendList extends HTMLElement {
                                 <a href="javascript:void(0)" id="friendChatBtn"><img src="static/chat-fill.svg" /></a>
                             </div>
                             <div id="friendDelBtn" class="text-center friendIcon align-middle">
-                                <a href="#"><img src="static/x-lg.svg" /></a>
+                                <a href="javascript:void(0)"><img src="static/x-lg.svg" /></a>
                             </div>
                         </div>
                     </div>
@@ -98,6 +105,10 @@ class FriendList extends HTMLElement {
                 const chatBtn = friendItem.querySelector("#friendChatBtn");
                 chatBtn.addEventListener("click", () => {
                     this.connectChat(friend.playerId, friend.playerName);
+                });
+                const delBtn = friendItem.querySelector("#friendDelBtn");
+                delBtn.addEventListener("click", async () => {
+                    this.deleteFriend(friend.playerName);
                 });
                 if (friend.playerName === localStorage.getItem("username")) {
                     const friendIcon = friendItem.querySelector(".friendIcon");
@@ -123,6 +134,150 @@ class FriendList extends HTMLElement {
                 element.classList.add("d-none");
             });
         }
+    }
+
+    set requests(data) {
+        this._requests = data;
+        const friendList = this.shadow.getElementById("friendList");
+        const currentLen = friendList.querySelectorAll(".friendlistItem").length;
+        // if (currentLen > this.requests.length) {
+        //     for (let i = this.requests.length; i < currentLen; i++) {
+        //         friendList.querySelectorAll(".friendlistItem")[i].remove();
+        //     }
+        // }
+        for (let i = currentLen; i < this.requests.length; i++) {
+            const friend = this.requests[i];
+            let friendItem;
+            if (i >= friendList.querySelectorAll(".friendlistItem").length) {
+                friendItem = document.createElement("li");
+                friendItem.classList.add("friendlistItem");
+                friendItem.classList.add("list-group-item");
+                friendItem.innerHTML = `
+                <div class="d-flex flex-row justify-content-around w-100 h-100">
+                    <div class="d-flex flex-row text-start w-100">
+                        <div class="d-flex flex-column px-3 justify-content-center">
+                            <img src="${friend.avatar}" class="avatar" />
+                        </div>
+                        <div class="d-flex flex-column justify-content-center">
+                            <span class="date fs-5">${friend.playerName}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-row align-items-center text-start friendStatus me-3">
+
+                    </div>
+                    <div class="d-flex flex-column justify-content-center">
+                        <div class="d-flex flex-row">
+                            <div class="text-center friendIcon align-middle">
+                                <a href="javascript:void(0)" id="friendAllowBtn"><img src="static/check.svg" /></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+                const chatBtn = friendItem.querySelector("#friendAllowBtn");
+                chatBtn.addEventListener("click", () => {
+                    // this.connectChat(friend.playerId, friend.playerName);
+                    this.allowRequest(friend.playerId, friend.playerName);
+                });
+                if (friend.playerName === localStorage.getItem("username")) {
+                    const friendIcon = friendItem.querySelector(".friendIcon");
+                    friendIcon.classList.add("d-none");
+                }
+                friendList.appendChild(friendItem);
+            } else {
+                friendItem = friendList.querySelectorAll(".friendlistItem")[i];
+            }
+            friendItem.querySelector(".avatar").src = friend.avatar;
+            friendItem.querySelector(".date").innerText = friend.playerName;
+            friendItem.querySelector(".friendStatus").innerHTML =
+                "Pending";
+        }
+
+        // if (!this.friendStatusBadge) {
+        //     this.shadow.querySelectorAll(".friendStatus").forEach((element) => {
+        //         element.classList.add("d-none");
+        //     });
+        // }
+        if (!this.friendDelBtn) {
+            this.shadow.querySelectorAll("#friendDelBtn").forEach((element) => {
+                element.classList.add("d-none");
+            });
+        }
+    }
+
+    get pending() {
+        return this._pending;
+    }
+
+    set pending(data) {
+        this._pending = data;
+        // const friendList = this.shadow.getElementById("friendList");
+        // const currentLen = friendList.querySelectorAll(".friendlistItem").length;
+        // if (currentLen > this._pending.length) {
+        //     for (let i = this._pending.length; i < currentLen; i++) {
+        //         friendList.querySelectorAll(".friendlistItem")[i].remove();
+        //     }
+        // }
+        // for (let i = 0; i < this._pending.length; i++) {
+        //     const friend = this._pending[i];
+        //     let friendItem;
+        //     if (i >= friendList.querySelectorAll(".friendlistItem").length) {
+        //         friendItem = document.createElement("li");
+        //         friendItem.classList.add("friendlistItem");
+        //         friendItem.classList.add("list-group-item");
+        //         friendItem.innerHTML = `
+        //         <div class="d-flex flex-row justify-content-around w-100 h-100">
+        //             <div class="d-flex flex-row text-start w-100">
+        //                 <div class="d-flex flex-column px-3 justify-content-center">
+        //                     <img src="${friend.avatar}" class="avatar" />
+        //                 </div>
+        //                 <div class="d-flex flex-column justify-content-center">
+        //                     <span class="date fs-5">${friend.playerName}</span>
+        //                 </div>
+        //             </div>
+        //             <div class="d-flex flex-row align-items-center text-start friendStatus me-3">
+        //                 ${this.getStatusBadge(friend)}
+        //             </div>
+        //             <div class="d-flex flex-column justify-content-center">
+        //                 <div class="d-flex flex-row">
+        //                     <div class="text-center friendIcon align-middle">
+        //                         <a href="javascript:void(0)" id="friendAllowBtn"><img src="static/chat-fill.svg" /></a>
+        //                     </div>
+        //                     <div id="friendDelBtn" class="text-center friendIcon align-middle">
+        //                         <a href="#"><img src="static/x-lg.svg" /></a>
+        //                     </div>
+        //                 </div>
+        //             </div>
+        //         </div>
+        //         `;
+        //         const chatBtn = friendItem.querySelector("#friendAllowBtn");
+        //         chatBtn.addEventListener("click", () => {
+        //             this.connectChat(friend.playerId, friend.playerName);
+        //         });
+        //         if (friend.playerName === localStorage.getItem("username")) {
+        //             const friendIcon = friendItem.querySelector(".friendIcon");
+        //             friendIcon.classList.add("d-none");
+        //         }
+        //         friendList.appendChild(friendItem);
+        //     } else {
+        //         friendItem = friendList.querySelectorAll(".friendlistItem")[i];
+        //     }
+        //     friendItem.querySelector(".avatar").src = friend.avatar;
+        //     friendItem.querySelector(".date").innerText = friend.playerName;
+        //     friendItem.querySelector(".friendStatus").innerHTML =
+        //         this.getStatusBadge(friend);
+        // }
+
+        // if (!this.friendStatusBadge) {
+        //     this.shadow.querySelectorAll(".friendStatus").forEach((element) => {
+        //         element.classList.add("d-none");
+        //     });
+        // }
+        // if (!this.friendDelBtn) {
+        //     this.shadow.querySelectorAll("#friendDelBtn").forEach((element) => {
+        //         element.classList.add("d-none");
+        //     });
+        // }
     }
 
     connectChat(id, name) {
@@ -151,6 +306,7 @@ class FriendList extends HTMLElement {
     }
 
     render(html) {
+        console.log("In render()")
         this.shadow.innerHTML = html;
         if (this.cardTitle) {
             const cardTitle = this.shadow.getElementById("cardTitle");
@@ -162,8 +318,59 @@ class FriendList extends HTMLElement {
         });
         const friendAddSubmit = this.shadow.getElementById("friendAddSubmit");
         friendAddSubmit.addEventListener("click", () => {
+            console.log("Before in addFriendSubmit()")
             this.addFriendSubmit();
         });
+    }
+
+    async allowRequest(id, name) {
+        const token = getUserToken();
+        if (!token) {
+            return false;
+        }
+        const api_url = constants.BACKEND_HOST + "/account/friends/accept/";
+        let result = false;
+        await fetch(api_url, {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer " + token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username: name }),
+        }).then(async (response) => {
+            if (response.status !== 200) {
+                console.error("Error accepting friend");
+                result = false;
+            } else {
+                result = true;
+            }
+        });
+        return result;
+    }
+
+    async deleteFriend(friendName) {
+        const token = getUserToken();
+        if (!token) {
+            return false;
+        }
+        const api_url = constants.BACKEND_HOST + "/account/friends/block/";
+        let result = false;
+        await fetch(api_url, {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer " + token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username: friendName }),
+        }).then(async (response) => {
+            if (response.status !== 200) {
+                console.error("Error deleting friend");
+                result = false;
+            } else {
+                result = true;
+            }
+        });
+        return result;
     }
 }
 
