@@ -14,5 +14,5 @@ urlpatterns = [
     path("history/", views.list_game_history, name="history_list"),
     path("friends/block/", views.block_friend_view, name="block_friend"),
     path("oauth42/", views.authen42, name="oauth42"),
-    path("redirect42/", views.authen42_redirect, name="redirect42")
+    path("redirect42", views.authen42_redirect, name="redirect42")
 ]

@@ -6,6 +6,7 @@ export async function initUser() {
      * Check localStorage whether there's a saved token
      * Then fetch the user data from the backend
      */
+    await refreshUserToken();
     const token = getUserToken();
     if (!token) {
         localStorage.removeItem("username");
@@ -109,12 +110,11 @@ export async function refreshUserToken() {
      */
     const api_url = constants.BACKEND_HOST + "/account/refresh/";
     const token = localStorage.getItem("token");
-    if (!token) {
-        return false;
-    }
-    const expire = parseJwt(token).exp;
-    if (expire - 5 > Date.now() / 1000) {
-        return false;
+    if (token) {
+        const expire = parseJwt(token).exp;
+        if (expire - 5 > Date.now() / 1000) {
+            return false;
+        }
     }
     await fetch(api_url, {
         method: "POST",
@@ -130,7 +130,6 @@ export async function refreshUserToken() {
             return true;
         })
         .catch((error) => {
-            console.error(error);
             localStorage.removeItem("token");
             return false;
         });

@@ -19,7 +19,6 @@ const login42 = document.getElementById("login42");
 login42.addEventListener("click", async (e) => {
     e.preventDefault();
 
-    // call 42 login api
     await signIn42();
 });
 
@@ -49,7 +48,8 @@ async function signInAccount(username, password) {
 }
 
 async function signIn42() {
-    console.log("42 login")
+    localStorage.removeItem("username");
+    localStorage.removeItem("token");
     const api_url = constants.BACKEND_HOST + "/account/oauth42/";
     try {
         const response = await fetch(api_url);
@@ -57,7 +57,6 @@ async function signIn42() {
             throw new Error('Network response was not ok');
         }
         const data = await response.json();
-        console.log(data); // Print the response data to debug
 
         const authUrl = data.auth_url;
         if (!authUrl) {
@@ -69,8 +68,4 @@ async function signIn42() {
     } catch (error) {
         console.error('There was a problem with the fetch operation:', error);
     }
-
-    // console.log(response)
-
-
 }

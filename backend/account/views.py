@@ -23,6 +23,7 @@ from backend.decorators import login_required_401
 # AUTHEN_42_URL = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-eb16615eeae12cb0c925ccb880a7b21c759357722b29dce6158a2c948c364dae&redirect_uri=http%3A%2F%2F10.19.248.133%3A8000%2Faccount%2Fredirect42%2F&response_type=code'
 AUTHEN_42_URL = 'https://api.intra.42.fr/oauth/authorize'
 
+
 @require_GET
 @login_required_401
 def user_view(request):
@@ -188,7 +189,6 @@ def accept_friend_invite_view(request):
     return JsonResponse({"success": True})
 
 
-###############################################################
 @login_required_401
 @require_POST
 def block_friend_view(request):
@@ -198,7 +198,6 @@ def block_friend_view(request):
     print(f"friend_to_remove = {friend_to_remove.details}")
     request.user.details.friends.remove(friend_to_remove.details)
     return JsonResponse({"success": True})
-###############################################################
 
 
 @login_required_401
@@ -251,28 +250,22 @@ def avatar_upload_view(request):
         )
     return JsonResponse({"success": False, "errors": form.errors})
 
+
 def authen42(request):
     # Construct auth URL
     auth_url = 'https://api.intra.42.fr/oauth/authorize'
     client_id = os.environ.get('CLIENT_ID')
-    redirect_uri = f"http://{request.get_host()}/account/redirect42/"
+    redirect_uri = f"https://{os.environ.get('HOST')}/api/account/redirect42"
 
     auth_url += f'?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code'
 
-    print( f' $$$$$$$ authen {auth_url}' )
-
-    auth_url = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-f9bbfcdb3ae6a9b3718c271123ef5e5433b3106d926d7a207bc535d7d0280cdd&redirect_uri=http%3A%2F%2F10.19.248.133%3A8000%2Faccount%2Fredirect42%2F&response_type=code'
-
     return JsonResponse({'auth_url': auth_url})
-
-    return redirect(auth_url)
 
 
 def authen42_redirect(request):
-    print( '====== redirect42 ======\n', request.GET )
     code = request.GET.get('code')
     # Get user info
-    redirect_uri = f"http://10.19.248.133/account/redirect42/"
+    redirect_uri = f"https://{os.environ.get('HOST')}/api/account/redirect42"
 
     # Exchange code for tokens and get user info
     user_info = exchange_code(code, redirect_uri)
@@ -281,72 +274,25 @@ def authen42_redirect(request):
     username = user_info['first_name']
     email = user_info['email']
     user = User.objects.filter(username=username).first()
-
     if not user:
-        user = User.objects.create_user(username=username, email=email, password=None, is_active=True)
+        user = User.objects.create_user(
+            username=username, email=email, password=None, is_active=True)
 
-    # Create JWT access token with expiration in 30 minutes
-    token_claims = {
-        "sub": user.id,
-        "name": user.username,
-        "iat": int(time.time()),
-        "exp": int(time.time()) + (60 * 30),
-    }
-    print( token_claims )
+    if hasattr(user, "usertoken"):
+        user.usertoken.delete()
 
-    access_token = jwt.encode(token_claims, "secret", algorithm="HS256")
-
-    refresh_token = binascii.hexlify(uuid4().bytes).decode()
-    UserToken.objects.create(user=user, access_token=access_token, refresh_token=refresh_token)
+    access_token, refresh_token = generate_user_token(user)
 
     # Return the token in a JsonResponse and set the refresh token in a cookie
     response = JsonResponse({"access_token": access_token})
-    response.set_cookie("refresh_token", refresh_token, httponly=True, secure=True)
+    response.set_cookie("refresh_token", refresh_token,
+                        httponly=True, secure=True)
+    response.headers["location"] = f"https://{os.environ.get('HOST')}/"
+    response.status_code = 302
     return response
 
-    # # create data info form
-    # form_data = {
-    #     'username':user_info['first_name'],
-    #     'password': None,
-    #     'email':user_info['email']
-    # }
-    # # Check whether user is already register or not
-    # user = (
-    #     User.objects.filter(username=form_data["username"])
-    #     .select_related("usertoken")
-    #     .first()
-    # )
-
-    # if not user:
-    #     # Create user account
-    #     User.objects.create_user(form_data, is_active=True)
-
-    # if hasattr(user, "usertoken"):
-    #     user.usertoken.delete()
-
-    # # Create JWT access token with expiration in 30 minutes
-    # token_claims = {
-    #     "sub": user.id,
-    #     "name": user.username,
-    #     "iat": int(time.time()),
-    #     "exp": int(time.time()) + (60 * 30),
-    # }
-    # access_token = jwt.encode(token_claims, "secret", algorithm="HS256")
-
-    # refresh_token = binascii.hexlify(uuid4().bytes).decode()
-    # rtn = {
-    #     "access_token": access_token,
-    # }
-    # UserToken.objects.create(
-    #     user=user, access_token=access_token, refresh_token=refresh_token
-    # )
-    # response = JsonResponse(rtn)
-    # response.set_cookie("refresh_token", refresh_token, httponly=True, secure=True)
-    # return response
 
 def exchange_code(code, redirect_uri):
-    print(f"show code in fn {code}")
-    print( f"show redirect_uri in fn {redirect_uri}")
     data = {
         'grant_type': (None, 'authorization_code'),
         'client_id': (None, settings.CLIENT_ID),
@@ -355,68 +301,18 @@ def exchange_code(code, redirect_uri):
         'redirect_uri': (None, redirect_uri),
     }
 
-    headers = {
-        'Content-Type': 'multipart/form-data'
-    }
-
-    print( '----------', data)
-
-    response = requests.post('https://api.intra.42.fr/oauth/token', files=data )
-    print(response.json())
-    print(response.request.headers.items())
-    print(response.request.body)
-    # print( '----------', data)
-
-    # token_uri = 'https://api.intra.42.fr/oauth/token'
-    # response = requests.post(token_uri, data=data)
-
-    print( f'---------- {response}')
-    
+    response = requests.post('https://api.intra.42.fr/oauth/token', files=data)
     if response.status_code != 200:
         raise Exception("Error exchanging code for token: " + response.text)
-    
+
     credentials = response.json()
     access_token = credentials['access_token']
-    
+
     response = requests.get("https://api.intra.42.fr/v2/me", headers={
         'Authorization': f'Bearer {access_token}'
     })
-    
+
     if response.status_code != 200:
         raise Exception("Error fetching user info: " + response.text)
-    
+
     return response.json()
-    # data = {
-    #     'grant_type': 'authorization_code',
-    #     'client_id': settings.CLIENT_ID,
-    #     'client_secret': settings.CLIENT_SECRET,
-    #     'code': code,
-    #     'redirect_uri': redirect_uri,
-    # }
-    # headers = {
-    #     'Content-Type': 'application/x-www-form-urlencoded'
-    # }
-
-    # token_uri = 'https://api.intra.42.fr/oauth/token'
-
-    # response = requests.request("POST", token_uri, headers=headers, data=data)
-    # print( '=' * 100)
-    # print( token_uri )
-    # print( response )
-    # credentials = response.json()
-    # print( credentials )
-    # access_token = credentials['access_token']
-    # response = requests.get("https://api.intra.42.fr/v2/me", headers={
-    #     'Authorization': 'Bearer %s' % access_token
-    # })
-    # raw_info = response.json()
-    # return (raw_info)
-
-
-# curl -X POST https://api.intra.42.fr/oauth/token \
-# -d 'grant_type=authorization_code' \
-# -d client_id=u-s4t2ud-eb16615eeae12cb0c925ccb880a7b21c759357722b29dce6158a2c948c364dae \
-# -d client_secret=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 \
-# -d code=17479aa761a156a153109b97bc99f7c8a95f192cb5d0bcbe4f638b1baf68d11f \
-# -d redirect_uri=http://10.19.248.133:8000/account/redirect42/ \
-# -H 'Content-Type: application/x-www-form-urlencoded'
