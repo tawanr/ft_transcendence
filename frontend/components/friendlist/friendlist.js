@@ -10,6 +10,7 @@ class FriendList extends HTMLElement {
         fetchHTML("/components/friendlist/friendlist.html").then((html) => {
             this.html = html;
             this.render(html);
+            this.accept = [];
         });
         this.cardTitle = this.getAttribute("title");
     }
@@ -137,17 +138,17 @@ class FriendList extends HTMLElement {
             friendItem.querySelector(".avatar").src = friend.avatar;
             friendItem.querySelector(".date").innerText = friend.playerName;
             friendItem.querySelector(".friendStatus").innerText = "Pending";
-        }
 
-        // Second loop: Add event listeners using closure
-        const allowBtns = inviteList.querySelectorAll(".friendAllowBtn");
-        allowBtns.forEach((allowBtn, i) => {
-            const friend = this.requests[i]; // Capture friend object for this iteration
+            // Remove existing event listener to prevent multiple bindings
+            const allowBtn = friendItem.querySelector(".friendAllowBtn");
+            const newAllowBtn = allowBtn.cloneNode(true);
+            allowBtn.replaceWith(newAllowBtn);
 
-            allowBtn.addEventListener("click", async () => {
+            // Add new event listener for this friend
+            newAllowBtn.addEventListener("click", async () => {
                 await this.allowRequest(friend.playerId, friend.playerName);
             });
-        });
+        }
 
         // Hide friendDelBtn if it's not initialized
         if (!this.friendDelBtn) {
@@ -218,36 +219,25 @@ class FriendList extends HTMLElement {
             friendItem.querySelector(".avatar").src = friend.avatar;
             friendItem.querySelector(".date").innerText = friend.playerName;
             friendItem.querySelector(".friendStatus").innerHTML = this.getStatusBadge(friend);
-        }
 
-        // Second loop: Add event listeners using closure
-        const chatBtns = friendList.querySelectorAll(".friendChatBtn");
-        const delBtns = friendList.querySelectorAll(".friendDelBtn");
+            // Remove existing event listeners to prevent multiple bindings
+            const chatBtn = friendItem.querySelector(".friendChatBtn");
+            const newChatBtn = chatBtn.cloneNode(true);
+            chatBtn.replaceWith(newChatBtn);
 
-        chatBtns.forEach((chatBtn, i) => {
-            const friend = this.friends[i]; // Capture friend object for this iteration
+            const delBtn = friendItem.querySelector(".friendDelBtn");
+            const newDelBtn = delBtn.cloneNode(true);
+            delBtn.replaceWith(newDelBtn);
 
-            chatBtn.addEventListener("click", () => {
+            // Add new event listeners
+            newChatBtn.addEventListener("click", () => {
                 this.connectChat(friend.playerId, friend.playerName);
             });
 
-            delBtns[i].addEventListener("click", async () => {
+            newDelBtn.addEventListener("click", async () => {
                 await this.deleteFriend(friend.playerName);
             });
-        });
-
-        // for (let i = 0; i < chatBtns.length; i++) {
-        //     const friend = this.friends[i]; // Capture friend object for this iteration
-
-        //     (function(friend, self) { // pass 'self' as 'this' context
-        //         chatBtns[i].addEventListener("click", () => {
-        //             self.connectChat(friend.playerId, friend.playerName);
-        //         });
-        //         delBtns[i].addEventListener("click", async () => {
-        //             await self.deleteFriend(friend.playerName);
-        //         });
-        //     })(friend, this); // Pass 'this' as 'self' to the closure
-        // }
+        }
 
         // Hide friendDelBtn if it's not initialized
         if (!this.friendDelBtn) {
@@ -314,7 +304,6 @@ class FriendList extends HTMLElement {
             return null;
         }
     }
-
 
     async allowRequest(id, name) {
         const token = getUserToken();
