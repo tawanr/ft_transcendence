@@ -57,8 +57,6 @@ class FriendList extends HTMLElement {
     }
 
     set requests(data) {
-        console.log("In set requests")
-        console.log("data: ", data)
         this._requests = data;
         this.updateRequests();
     }
@@ -68,7 +66,6 @@ class FriendList extends HTMLElement {
     }
 
     set friends(data) {
-        console.log("In set friends")
         this._friends = data;
         this.updateFriends();
     }
@@ -83,11 +80,8 @@ class FriendList extends HTMLElement {
     }
 
     updateRequests() {
-        console.log("Updating requests");
         const inviteList = this.shadow.getElementById("inviteList");
         const currentLen = inviteList.querySelectorAll(".friendlistItem").length;
-        console.log("currentLen: ", currentLen);
-        console.log("this.requests.length: ", this.requests.length);
 
         // Remove excess items
         if (currentLen > this.requests.length) {
@@ -147,16 +141,13 @@ class FriendList extends HTMLElement {
 
         // Second loop: Add event listeners using closure
         const allowBtns = inviteList.querySelectorAll(".friendAllowBtn");
-        for (let i = 0; i < allowBtns.length; i++) {
+        allowBtns.forEach((allowBtn, i) => {
             const friend = this.requests[i]; // Capture friend object for this iteration
 
-            (function(friend, self) { // pass 'self' as 'this' context
-                allowBtns[i].addEventListener("click", async function() {
-                    console.log("allow btn friend.playerName: ", friend.playerName);
-                    await self.allowRequest(friend.playerId, friend.playerName);
-                });
-            })(friend, this); // Pass 'this' as 'self' to the closure
-        }
+            allowBtn.addEventListener("click", async () => {
+                await this.allowRequest(friend.playerId, friend.playerName);
+            });
+        });
 
         // Hide friendDelBtn if it's not initialized
         if (!this.friendDelBtn) {
@@ -167,11 +158,8 @@ class FriendList extends HTMLElement {
     }
 
     updateFriends() {
-        console.log("Updating friends");
         const friendList = this.shadow.getElementById("friendList");
         const currentLen = friendList.querySelectorAll(".friendlistItem").length;
-        console.log("currentLen: ", currentLen);
-        console.log("this.friends.length: ", this.friends.length);
 
         // Remove excess items
         if (currentLen > this.friends.length) {
@@ -236,18 +224,30 @@ class FriendList extends HTMLElement {
         const chatBtns = friendList.querySelectorAll(".friendChatBtn");
         const delBtns = friendList.querySelectorAll(".friendDelBtn");
 
-        for (let i = 0; i < chatBtns.length; i++) {
+        chatBtns.forEach((chatBtn, i) => {
             const friend = this.friends[i]; // Capture friend object for this iteration
 
-            (function(friend, self) { // pass 'self' as 'this' context
-                chatBtns[i].addEventListener("click", () => {
-                    self.connectChat(friend.playerId, friend.playerName);
-                });
-                delBtns[i].addEventListener("click", async () => {
-                    await self.deleteFriend(friend.playerName);
-                });
-            })(friend, this); // Pass 'this' as 'self' to the closure
-        }
+            chatBtn.addEventListener("click", () => {
+                this.connectChat(friend.playerId, friend.playerName);
+            });
+
+            delBtns[i].addEventListener("click", async () => {
+                await this.deleteFriend(friend.playerName);
+            });
+        });
+
+        // for (let i = 0; i < chatBtns.length; i++) {
+        //     const friend = this.friends[i]; // Capture friend object for this iteration
+
+        //     (function(friend, self) { // pass 'self' as 'this' context
+        //         chatBtns[i].addEventListener("click", () => {
+        //             self.connectChat(friend.playerId, friend.playerName);
+        //         });
+        //         delBtns[i].addEventListener("click", async () => {
+        //             await self.deleteFriend(friend.playerName);
+        //         });
+        //     })(friend, this); // Pass 'this' as 'self' to the closure
+        // }
 
         // Hide friendDelBtn if it's not initialized
         if (!this.friendDelBtn) {
@@ -317,8 +317,6 @@ class FriendList extends HTMLElement {
 
 
     async allowRequest(id, name) {
-        console.log("In allowRequest")
-        console.log("xxxname: ", name)
         const token = getUserToken();
         if (!token) {
             return false;
@@ -369,8 +367,6 @@ class FriendList extends HTMLElement {
     }
 
     async deleteFriend(friendName) {
-        console.log("In deleteFriend")
-        console.log("friendName: ", friendName)
         const token = getUserToken();
         if (!token) {
             return false;
@@ -392,7 +388,6 @@ class FriendList extends HTMLElement {
                 result = true;
                 // Update the friends list instead of reloading the page
                 const updatedFriends = this._friends.filter(friend => friend.playerName !== friendName);
-                console.log("Updated Friends: ", updatedFriends);
                 this.friends = updatedFriends; // This will call the set friends() method
             }
         });
@@ -401,166 +396,3 @@ class FriendList extends HTMLElement {
 }
 
 customElements.define("friend-list", FriendList);
-
-    // updateRequests() {
-    //     console.log("Updating requests");
-    //     const inviteList = this.shadow.getElementById("inviteList");
-    //     const currentLen = inviteList.querySelectorAll(".friendlistItem").length;
-    //     console.log("currentLen: ", currentLen)
-    //     console.log("this.requests.length: ", this.requests.length)
-
-    //     //Remove excess items
-    //     if (currentLen > this.requests.length) {
-    //         for (let i = this.requests.length; i < currentLen; i++) {
-    //             inviteList.querySelectorAll(".friendlistItem")[i].remove();
-    //         }
-    //     }
-
-    //     // Add or update items
-    //     for (let i = 0; i < this.requests.length; i++) {
-    //         console.log("In for loop of add update requests")
-    //         let friend = this.requests[i];
-    //         let friendItem;
-    //         console.log("i: ", i)
-    //         console.log("currentLen: ", currentLen)
-    //         console.log("friend.playerName: ", friend.playerName);
-    //         if (i >= currentLen) {
-    //             friendItem = document.createElement("li");
-    //             friendItem.classList.add("friendlistItem", "list-group-item");
-    //             friendItem.innerHTML = `
-    //                 <div class="d-flex flex-row justify-content-around w-100 h-100">
-    //                     <div class="d-flex flex-row text-start w-100">
-    //                         <div class="d-flex flex-column px-3 justify-content-center">
-    //                             <img src="${friend.avatar}" class="avatar" />
-    //                         </div>
-    //                         <div class="d-flex flex-column justify-content-center">
-    //                             <span class="date fs-5">${friend.playerName}</span>
-    //                         </div>
-    //                     </div>
-    //                     <div class="d-flex flex-row align-items-center text-start friendStatus me-3">
-    //                         Pending
-    //                     </div>
-    //                     <div class="d-flex flex-column justify-content-center">
-    //                         <div class="d-flex flex-row">
-    //                             <div class="text-center friendIcon align-middle">
-    //                                 <a href="javascript:void(0)" id="friendAllowBtn"><img src="static/check.svg" /></a>
-    //                             </div>
-    //                         </div>
-    //                     </div>
-    //                 </div>
-    //             `;
-    //             const allowBtn = friendItem.querySelector("#friendAllowBtn");
-
-    //             console.log("Before in event, playerName: ", friend.playerName)
-    //             allowBtn.addEventListener("click", async () => {
-    //                 console.log("allow btn friend.playerName: ", friend.playerName)
-    //                 await this.allowRequest(friend.playerId, friend.playerName);
-    //             });
-
-    //             // allowBtn.addEventListener("click", async function(friend) {
-    //             //     console.log("allow btn friend.playerName: ", friend.playerName);
-    //             //     await this.allowRequest(friend.playerId, friend.playerName);
-    //             // }.bind(this, friend));
-
-    //             if (friend.playerName === localStorage.getItem("username")) {
-    //                 const friendIcon = friendItem.querySelector(".friendIcon");
-    //                 friendIcon.classList.add("d-none");
-    //             }
-    //             inviteList.appendChild(friendItem);
-    //         } else {
-    //             friendItem = inviteList.querySelectorAll(".friendlistItem")[i];
-    //         }
-    //         friendItem.querySelector(".avatar").src = friend.avatar;
-    //         friendItem.querySelector(".date").innerText = friend.playerName;
-    //         friendItem.querySelector(".friendStatus").innerText = "Pending";
-    //     }
-
-    //     if (!this.friendDelBtn) {
-    //         this.shadow.querySelectorAll("#friendDelBtn").forEach((element) => {
-    //             element.classList.add("d-none");
-    //         });
-    //     }
-    // }
-
-
-    //     updateFriends() {
-    //     console.log("Updating friends");
-    //     const friendList = this.shadow.getElementById("friendList");
-    //     const currentLen = friendList.querySelectorAll(".friendlistItem").length;
-    //     console.log("currentLen: ", currentLen)
-    //     console.log("this.friends.length: ", this.friends.length)
-
-    //     // Remove excess items
-    //     if (currentLen > this.friends.length) {
-    //         for (let i = this.friends.length; i < currentLen; i++) {
-    //             friendList.querySelectorAll(".friendlistItem")[i].remove();
-    //         }
-    //     }
-
-    //     // Add or update items
-    //     for (let i = 0; i < this.friends.length; i++) {
-    //         let friend = this.friends[i];
-    //         console.log(friend)
-    //         let friendItem;
-    //         if (i >= currentLen) {
-    //             friendItem = document.createElement("li");
-    //             friendItem.classList.add("friendlistItem", "list-group-item");
-    //             friendItem.innerHTML = `
-    //                 <div class="d-flex flex-row justify-content-around w-100 h-100">
-    //                     <div class="d-flex flex-row text-start w-100">
-    //                         <div class="d-flex flex-column px-3 justify-content-center">
-    //                             <img src="${friend.avatar}" class="avatar" />
-    //                         </div>
-    //                         <div class="d-flex flex-column justify-content-center">
-    //                             <span class="date fs-5">${friend.playerName}</span>
-    //                         </div>
-    //                     </div>
-    //                     <div class="d-flex flex-row align-items-center text-start friendStatus me-3">
-    //                         ${this.getStatusBadge(friend)}
-    //                     </div>
-    //                     <div class="d-flex flex-column justify-content-center">
-    //                         <div class="d-flex flex-row">
-    //                             <div class="text-center friendIcon align-middle">
-    //                                 <a href="javascript:void(0)" id="friendChatBtn"><img src="static/chat-fill.svg" /></a>
-    //                             </div>
-    //                             <div id="friendDelBtn" class="text-center friendIcon align-middle">
-    //                                 <a href="javascript:void(0)"><img src="static/x-lg.svg" /></a>
-    //                             </div>
-    //                         </div>
-    //                     </div>
-    //                 </div>
-    //             `;
-    //             const chatBtn = friendItem.querySelector("#friendChatBtn");
-    //             chatBtn.addEventListener("click", () => {
-    //                 this.connectChat(friend.playerId, friend.playerName);
-    //             });
-    //             const delBtn = friendItem.querySelector("#friendDelBtn");
-    //             console.log("Before event, friend.playerName: ", friend.playerName)
-    //             delBtn.addEventListener("click", async () => {
-    //                 console.log("del button friend.playerName: ", friend.playerName)
-    //                 await this.deleteFriend(friend.playerName);
-    //             });
-    //             if (friend.playerName === localStorage.getItem("username")) {
-    //                 const friendIcon = friendItem.querySelector(".friendIcon");
-    //                 friendIcon.classList.add("d-none");
-    //             }
-    //             friendList.appendChild(friendItem);
-    //         } else {
-    //             friendItem = friendList.querySelectorAll(".friendlistItem")[i];
-    //         }
-    //         friendItem.querySelector(".avatar").src = friend.avatar;
-    //         friendItem.querySelector(".date").innerText = friend.playerName;
-    //         friendItem.querySelector(".friendStatus").innerHTML = this.getStatusBadge(friend);
-    //     }
-
-    //     if (!this.friendStatusBadge) {
-    //         this.shadow.querySelectorAll(".friendStatus").forEach((element) => {
-    //             element.classList.add("d-none");
-    //         });
-    //     }
-    //     if (!this.friendDelBtn) {
-    //         this.shadow.querySelectorAll("#friendDelBtn").forEach((element) => {
-    //             element.classList.add("d-none");
-    //         });
-    //     }
-    // }
