@@ -32,6 +32,10 @@ async function getTournamentDetails() {
         window.location.replace("/login");
         return;
     }
+    const tournamentId = document.getElementById("tournamentId").value;
+    if (!tournamentId) {
+        return;
+    }
     const api_url = constants.BACKEND_HOST + constants.BACKEND_TOURNAMENT_API;
     await fetch(api_url, {
         method: "GET",
@@ -103,6 +107,7 @@ function createTournament() {
     }).then((response) => {
         if (response.status !== 201) {
             // Error Handling
+            alert("Cannot create tournament!'");
             return;
         }
         clearTimeout(interval);
@@ -130,6 +135,7 @@ function joinTournament() {
     }).then((response) => {
         if (response.status !== 200) {
             // Error Handling
+            alert("Cannot find tournament id: " + tournamentId);
             return;
         }
         clearTimeout(interval);
@@ -152,6 +158,7 @@ function leaveTournament() {
     }).then((response) => {
         if (response.status !== 200) {
             // Error Handling
+            alert("Cannot leave tournament!");
             return;
         }
         clearTimeout(interval);
@@ -175,6 +182,7 @@ function startTournament() {
     }).then((response) => {
         if (response.status !== 200) {
             // Error Handling
+            alert("Cannot start tournament!");
             return;
         }
         clearTimeout(interval);
