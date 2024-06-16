@@ -21,6 +21,10 @@ export async function initUser() {
         localStorage.removeItem("username");
     }
     updateUserNav();
+    if (username) {
+        return true;
+    }
+    return false;
 }
 
 export function updateUserNav() {
