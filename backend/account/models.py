@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import models
 from gameplay.models import GamePlayer
+from channels.layers import get_channel_layer
 
 
 class UserToken(models.Model):
@@ -82,6 +83,29 @@ class UserFriendInvite(models.Model):
         self.delete()
 
 
+class UserNotificationManager(models.Manager):
+    async def acreate(self, user, type, referral=""):
+        notification = await super().acreate(user=user, type=type, referral=referral)
+        channel_layer = get_channel_layer()
+        await channel_layer.group_send(
+            f"notification_{user.id}",
+            {
+                "type": "client.send_notification",
+                "id": notification.id,
+            },
+        )
+
+    def create(self, user, type, referral=""):
+        notification = super().create(user=user, type=type, referral=referral)
+        channel_layer = get_channel_layer()
+        channel_layer.group_send(
+            f"notification_{user.id}",
+            {
+                "type": "client.send_notification",
+                "id": notification.id,
+            },
+        )
+
 class UserNotifications(models.Model):
     class NotificationTypes(models.TextChoices):
         PRIVATE_CHAT = "private_chat"
@@ -99,6 +123,8 @@ class UserNotifications(models.Model):
     referral = models.CharField(max_length=30)
     is_read = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
+    objects = UserNotificationManager()
+
 
     class Meta:
         ordering = ["-created"]

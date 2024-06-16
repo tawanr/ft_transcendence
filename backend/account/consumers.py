@@ -55,7 +55,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             return
         self.user = token.user
         if not data["type"] == "client.register":
+            await self.channel_layer.group_send(
+                self.group_name,
+                data
+            )
             return
+        self.group_name = f"notification_{self.user.id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.send(
             text_data=json.dumps(
                 {
@@ -68,10 +74,38 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def client_notifications(self, event):
         notifications = UserNotifications.objects.filter(user=self.user).all()[:10]
         rtn = []
-        for noti in notifications:
+        async for noti in notifications:
             data = {
-                "type": noti.type,
-                "is_read": noti.is_read,
+                "notification": noti.type,
+                "isRead": noti.is_read,
             }
             rtn.append(data)
-        await self.send(text_data=json.dumps({"data": rtn}))
+        await self.send(text_data=json.dumps({"type": "notification_list", "data": rtn}))
+
+    async def client_read(self, event):
+        notifications = UserNotifications.objects.filter(user=self.user).all()
+        await notifications.aupdate(is_read=True)
+        notifications = UserNotifications.objects.filter(user=self.user).all()[:10]
+        rtn = []
+        async for noti in notifications:
+            data = {
+                "notification": noti.type,
+                "isRead": noti.is_read,
+            }
+            rtn.append(data)
+        await self.send(text_data=json.dumps({"type": "notification_list", "data": rtn}))
+
+    async def client_send_notification(self, event):
+        id = event["id"]
+        notification = await UserNotifications.objects.filter(id=id).afirst()
+        if not notification:
+            return
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "notification",
+                    "notification": notification.type,
+                    "isRead": notification.is_read,
+                }
+            )
+        )

@@ -62,9 +62,29 @@ class TestNotificationWebsocket(TestCase):
             type=types.PRIVATE_CHAT,
             referral=sender.id,
         )
-        communicator, _ = await self.connect_ws()
+        communicator, message = await self.connect_ws()
         message = {"type": "client.notifications", "authorization": self.token}
         await communicator.send_json_to(message)
         response = await communicator.receive_json_from()
-        expected = {"data": [{"type": types.PRIVATE_CHAT, "is_read": False}]}
+        expected = {"type": "notification_list", "data": [{"notification": types.PRIVATE_CHAT, "isRead": False}]}
+        self.assertDictEqual(response, expected)
+        message = {"type": "client.read", "authorization": self.token}
+        await communicator.send_json_to(message)
+        response = await communicator.receive_json_from()
+        expected = {"type": "notification_list", "data": [{"notification": types.PRIVATE_CHAT, "isRead": True}]}
+        self.assertDictEqual(response, expected)
+
+    async def test_get_notification(self):
+        communicator, _ = await self.connect_ws()
+        types = UserNotifications.NotificationTypes
+        sender = await sync_to_async(User.objects.create_user)(
+            username="testuser2", password="testpassword"
+        )
+        await UserNotifications.objects.acreate(
+            user=self.user,
+            type=types.PRIVATE_CHAT,
+            referral=sender.id,
+        )
+        response = await communicator.receive_json_from()
+        expected = {"type": "notification", "notification": types.PRIVATE_CHAT, "isRead": False}
         self.assertDictEqual(response, expected)
