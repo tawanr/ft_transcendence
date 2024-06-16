@@ -17,6 +17,9 @@ class ChatRoom extends HTMLElement {
     }
 
     connectChatRoom(roomType, roomName) {
+        if (this.chatSocket) {
+            return;
+        }
         this.chatSocket = create_chat_socket(roomType, roomName);
         websocket_event(this);
 
