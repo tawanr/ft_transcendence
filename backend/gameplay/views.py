@@ -1,14 +1,17 @@
 import json
 import stat
+import traceback
 
 from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.http import Http404, JsonResponse
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
+from django.contrib.auth.models import User
 
+from account.models import UserNotifications
 from backend.decorators import login_required_401
-from gameplay.models import Tournament, TournamentPlayer
+from gameplay.models import GamePlayer, GameRoom, Tournament, TournamentPlayer
 
 # Create your views here.
 
@@ -174,7 +177,8 @@ def tournament_detail(request, tournament_id: int):
 @login_required_401
 def join_tournament(request, tournament_id: int):
     user = request.user
-    tournament = Tournament.objects.filter(pk=tournament_id, is_active=True).first()
+    tournament = Tournament.objects.filter(
+        pk=tournament_id, is_active=True).first()
     if not tournament:
         return JsonResponse(
             {"success": False, "message": "Tournament not found"}, status=404
@@ -198,6 +202,40 @@ def join_tournament(request, tournament_id: int):
     return JsonResponse(
         {"success": True, "message": "Player added to tournament successfully"}
     )
+
+
+@require_POST
+@login_required_401
+def invite_game_player(request):
+    try:
+        payload = json.loads(request.body)
+        name = payload.get("username")
+        invitee = User.objects.get(username=name)
+        user = request.user
+        if GamePlayer.objects.filter(game_room__is_active=True, is_active=True, player__in=[user, invitee]):
+            response = JsonResponse(
+                {"success": False, "message": "Player already in a game"}
+            )
+            response.status_code = 403
+            return response
+        room = GameRoom.objects.create()
+        async_to_sync(room.add_player)(user)
+        async_to_sync(room.add_player)(invitee)
+        UserNotifications.objects.create(
+            type="game_invite",
+            user=invitee,
+            referral=user.id,
+        )
+        return JsonResponse(
+            {"success": True, "code": room.game_code}
+        )
+    except:
+        response = JsonResponse(
+            {"success": False, "message": "Cannot start a game with the given players"}
+        )
+        response.status_code = 403
+        print(traceback.format_exc())
+        return response
 
 
 @require_POST
