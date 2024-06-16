@@ -349,7 +349,9 @@ class FriendList extends HTMLElement {
         if (!token) {
             return false;
         }
-        const api_url = constants.BACKEND_SOCKET_HOST + "/account/friends/accept/";
+        console.log("name", name)
+        // const api_url = constants.BACKEND_SOCKET_HOST + "/account/friends/accept/";
+        const api_url = constants.BACKEND_HOST + "/account/friends/accept/";
         let result = false;
         await fetch(api_url, {
             method: "POST",
