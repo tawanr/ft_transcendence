@@ -39,9 +39,9 @@ services:
   frontend:
     # image: nginx
     build: ./frontend
-    # ports:
-      # - "80:80"
-      # - "9999:443"
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/:/etc/nginx/conf.d/
       - ./frontend/:/frontend/
