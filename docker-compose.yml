@@ -39,10 +39,9 @@ services:
   frontend:
     # image: nginx
     build: ./frontend
-    ports:
-      - "80:80"
-      - "443:443"
-      # - "${FRONTEND_PORT}:80"
+    # ports:
+      # - "80:80"
+      # - "9999:443"
     volumes:
       - ./nginx/:/etc/nginx/conf.d/
       - ./frontend/:/frontend/
@@ -179,10 +178,10 @@ services:
       - xpack.security.transport.ssl.verification_mode=certificate
       - xpack.license.self_generated.type=${LICENSE}
     mem_limit: ${ES_MEM_LIMIT}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
+    # ulimits:
+    #   memlock:
+    #     soft: -1
+    #     hard: -1
     healthcheck:
       test:
         [
@@ -258,4 +257,5 @@ services:
 
 networks:
   transcendence:
+
 

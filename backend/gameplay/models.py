@@ -62,7 +62,13 @@ class Tournament(models.Model):
         return host.player
 
     async def add_player(self, player, is_host=False):
+        from account.models import UserNotifications
         await sync_to_async(self.players.add)(player)
+        # await UserNotifications.objects.acreate(
+        #     user=player,
+        #     type="tour_invite",
+        #     referral=self.id,
+        # )
         if await self.players.acount() > self.size:
             self.size *= 2
             await self.asave()
@@ -101,6 +107,7 @@ class Tournament(models.Model):
         return True
 
     async def _create_round_games(self, level):
+        from account.models import UserNotifications
         games = []
         round_size = int(self.size / (level * 2))
         players = [
@@ -116,6 +123,11 @@ class Tournament(models.Model):
                     await GameRoom.objects.acreate(tournament=self, level=level)
                 )
             await games[idx % round_size].add_player(player)
+            await UserNotifications.objects.acreate(
+                user=player,
+                type="game_start",
+                referral=self.id,
+            )
         for game in games:
             if await game.players.acount() == 1:
                 await game.victory(

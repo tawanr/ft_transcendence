@@ -5,6 +5,8 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import models
 from gameplay.models import GamePlayer
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 
 class UserToken(models.Model):
@@ -80,3 +82,50 @@ class UserFriendInvite(models.Model):
         # print("Accept friends")
         self.from_user.details.friends.add(self.to_user)
         self.delete()
+
+
+class UserNotificationManager(models.Manager):
+    async def acreate(self, user, type, referral=""):
+        notification = await super().acreate(user=user, type=type, referral=referral)
+        channel_layer = get_channel_layer()
+        await channel_layer.group_send(
+            f"notification_{user.id}",
+            {
+                "type": "client.send_notification",
+                "id": notification.id,
+            },
+        )
+
+    def create(self, user, type, referral=""):
+        notification = super().create(user=user, type=type, referral=referral)
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"notification_{user.id}",
+            {
+                "type": "client.send_notification",
+                "id": notification.id,
+            },
+        )
+
+class UserNotifications(models.Model):
+    class NotificationTypes(models.TextChoices):
+        PRIVATE_CHAT = "private_chat"
+        TOUR_CHAT = "tour_chat"
+        FRIEND_INVITE = "friend_invite"
+        GAME_INVITE = "game_invite"
+        TOUR_INVITE = "tour_invite"
+        GAME_START = "game_start"
+        TOUR_ROUND = "tour_round"
+
+    user = models.ForeignKey(
+        "auth.User", on_delete=models.CASCADE, related_name="notifications"
+    )
+    type = models.CharField(max_length=20, choices=NotificationTypes.choices)
+    referral = models.CharField(max_length=30)
+    is_read = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+    objects = UserNotificationManager()
+
+
+    class Meta:
+        ordering = ["-created"]

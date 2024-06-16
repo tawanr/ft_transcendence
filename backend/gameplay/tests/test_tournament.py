@@ -109,7 +109,10 @@ class TestTournament(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_add_player(self):
-        url = reverse("add_player_to_tournament")
+        url = reverse(
+            "add_player_to_tournament",
+            kwargs={"tournament_id": self.tournament.id},
+        )
         self.assertEqual(self.tournament.players.count(), 0)
         payload = {"username": self.users[0].username}
 
