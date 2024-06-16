@@ -27,21 +27,25 @@ services:
     networks:
       - transcendence
     environment:
-      DB_NAME: ft_transcendence
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_HOST: db
-      DB_PORT: 5432
-      JWT_KEY: secret
-      PYTHONPATH: backend
-    command: sh -c "python manage.py migrate && gunicorn backend.wsgi --bind 0.0.0.0:8000"
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      JWT_KEY: ${JWT_KEY}
+      PYTHONPATH: ${PYTHONPATH}
+      CLIENT_ID: ${CLIENT_ID}
+      CLIENT_SECRET: ${CLIENT_SECRET}
+      HOST: ${HOST}
+      NGINX_PORT: ${NGINX_PORT}
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
 
   frontend:
     # image: nginx
     build: ./frontend
     ports:
-      - "80:80"
-      - "443:443"
+      - "${FRONTEND_HTTP_PORT}:80"
+      - "${FRONTEND_HTTPS_PORT}:443"
     volumes:
       - ./nginx/:/etc/nginx/conf.d/
       - ./frontend/:/frontend/
