@@ -85,15 +85,6 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def client_read(self, event):
         notifications = UserNotifications.objects.filter(user=self.user).all()
         await notifications.aupdate(is_read=True)
-        notifications = UserNotifications.objects.filter(user=self.user).all()[:10]
-        rtn = []
-        async for noti in notifications:
-            data = {
-                "notification": noti.type,
-                "isRead": noti.is_read,
-            }
-            rtn.append(data)
-        await self.send(text_data=json.dumps({"type": "notification_list", "data": rtn}))
 
     async def client_send_notification(self, event):
         id = event["id"]

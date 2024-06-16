@@ -70,6 +70,8 @@ class TestNotificationWebsocket(TestCase):
         self.assertDictEqual(response, expected)
         message = {"type": "client.read", "authorization": self.token}
         await communicator.send_json_to(message)
+        message = {"type": "client.notifications", "authorization": self.token}
+        await communicator.send_json_to(message)
         response = await communicator.receive_json_from()
         expected = {"type": "notification_list", "data": [{"notification": types.PRIVATE_CHAT, "isRead": True}]}
         self.assertDictEqual(response, expected)

@@ -6,6 +6,7 @@ from django.core.cache import cache
 from django.db import models
 from gameplay.models import GamePlayer
 from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 
 class UserToken(models.Model):
@@ -98,7 +99,7 @@ class UserNotificationManager(models.Manager):
     def create(self, user, type, referral=""):
         notification = super().create(user=user, type=type, referral=referral)
         channel_layer = get_channel_layer()
-        channel_layer.group_send(
+        async_to_sync(channel_layer.group_send)(
             f"notification_{user.id}",
             {
                 "type": "client.send_notification",
