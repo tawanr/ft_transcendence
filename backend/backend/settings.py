@@ -168,13 +168,14 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r'^http://0.0.0.10/.19/.244/d%7B1,3%7D(:/d+)?$',
-	r'^htts://0.0.0.10/.19/.244/d%7B1,3%7D(:/d+)?$', ]
+    r'^htts://0.0.0.10/.19/.244/d%7B1,3%7D(:/d+)?$', ]
 CORS_ORIGIN_WHITELIST = [
     "http://10.19.*",
-	"https://10.19.*",
-	"http://*",
-	"https://*"
+    "https://10.19.*",
+    "http://*",
+    "https://*"
 ]
+
 SESSION_COOKIE_SAMESITE = "None"
 
 JWT_KEY = os.environ.get("JWT_KEY")
@@ -231,3 +232,6 @@ DEFAULT_AVATAR = os.environ.get(
     "DEFAULT_AVATAR", "uploads/avatars/42_Logo.png")
 
 # SECURE_SSL_REDIRECT = True
+
+CLIENT_ID = os.environ.get("CLIENT_ID")
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET")

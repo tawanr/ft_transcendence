@@ -1,9 +1,15 @@
+import binascii
 import json
+import jwt
+import os
+import requests
+import time
+from uuid import uuid4
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.http import require_GET, require_POST
@@ -13,6 +19,9 @@ from account.forms import RegisterForm, UploadAvatarForm
 from account.models import UserFriendInvite, UserToken
 from account.services import generate_user_token, handle_upload_avatar
 from backend.decorators import login_required_401
+
+# AUTHEN_42_URL = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-eb16615eeae12cb0c925ccb880a7b21c759357722b29dce6158a2c948c364dae&redirect_uri=http%3A%2F%2F10.19.248.133%3A8000%2Faccount%2Fredirect42%2F&response_type=code'
+AUTHEN_42_URL = 'https://api.intra.42.fr/oauth/authorize'
 
 
 @require_GET
@@ -180,7 +189,6 @@ def accept_friend_invite_view(request):
     return JsonResponse({"success": True})
 
 
-###############################################################
 @login_required_401
 @require_POST
 def block_friend_view(request):
@@ -190,7 +198,6 @@ def block_friend_view(request):
     print(f"friend_to_remove = {friend_to_remove.details}")
     request.user.details.friends.remove(friend_to_remove.details)
     return JsonResponse({"success": True})
-###############################################################
 
 
 @login_required_401
@@ -242,3 +249,70 @@ def avatar_upload_view(request):
             {"success": True, "image_path": request.user.details.avatar.url}
         )
     return JsonResponse({"success": False, "errors": form.errors})
+
+
+def authen42(request):
+    # Construct auth URL
+    auth_url = 'https://api.intra.42.fr/oauth/authorize'
+    client_id = os.environ.get('CLIENT_ID')
+    redirect_uri = f"https://{os.environ.get('HOST')}/api/account/redirect42"
+
+    auth_url += f'?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code'
+
+    return JsonResponse({'auth_url': auth_url})
+
+
+def authen42_redirect(request):
+    code = request.GET.get('code')
+    # Get user info
+    redirect_uri = f"https://{os.environ.get('HOST')}/api/account/redirect42"
+
+    # Exchange code for tokens and get user info
+    user_info = exchange_code(code, redirect_uri)
+
+    # Create or retrieve user
+    username = user_info['first_name']
+    email = user_info['email']
+    user = User.objects.filter(username=username).first()
+    if not user:
+        user = User.objects.create_user(
+            username=username, email=email, password=None, is_active=True)
+
+    if hasattr(user, "usertoken"):
+        user.usertoken.delete()
+
+    access_token, refresh_token = generate_user_token(user)
+
+    # Return the token in a JsonResponse and set the refresh token in a cookie
+    response = JsonResponse({"access_token": access_token})
+    response.set_cookie("refresh_token", refresh_token,
+                        httponly=True, secure=True)
+    response.headers["location"] = f"https://{os.environ.get('HOST')}/"
+    response.status_code = 302
+    return response
+
+
+def exchange_code(code, redirect_uri):
+    data = {
+        'grant_type': (None, 'authorization_code'),
+        'client_id': (None, settings.CLIENT_ID),
+        'client_secret': (None, settings.CLIENT_SECRET),
+        'code': (None, code),
+        'redirect_uri': (None, redirect_uri),
+    }
+
+    response = requests.post('https://api.intra.42.fr/oauth/token', files=data)
+    if response.status_code != 200:
+        raise Exception("Error exchanging code for token: " + response.text)
+
+    credentials = response.json()
+    access_token = credentials['access_token']
+
+    response = requests.get("https://api.intra.42.fr/v2/me", headers={
+        'Authorization': f'Bearer {access_token}'
+    })
+
+    if response.status_code != 200:
+        raise Exception("Error fetching user info: " + response.text)
+
+    return response.json()
