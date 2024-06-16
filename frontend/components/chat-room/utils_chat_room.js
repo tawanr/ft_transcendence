@@ -1,12 +1,12 @@
-// import * as constants from "../../constants.js";
-
-export const BACKEND_SERVER_IP = location.hostname;
-export const BACKEND_SOCKET_HOST = `wss://${BACKEND_SERVER_IP}/wsapi`;
-export const BACKEND_CHATROOM_API = "/ws/chatroom/";
+import * as constants from "../../js/constants.js";
 
 export function create_chat_socket(roomType, roomName) {
     const chatSocket = new WebSocket(
-        `${BACKEND_SOCKET_HOST}` + `${BACKEND_CHATROOM_API}` + roomType + "/" + roomName
+        `${constants.BACKEND_SOCKET_HOST}` +
+            `${constants.BACKEND_CHATROOM_API}` +
+            roomType +
+            "/" +
+            roomName
     );
     return chatSocket;
 }

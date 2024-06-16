@@ -71,7 +71,6 @@ class FriendList extends HTMLElement {
         this.updateFriends();
     }
 
-
     get pending() {
         return this._pending;
     }
@@ -218,7 +217,8 @@ class FriendList extends HTMLElement {
             // Update friendItem details (avatar, playerName, status)
             friendItem.querySelector(".avatar").src = friend.avatar;
             friendItem.querySelector(".date").innerText = friend.playerName;
-            friendItem.querySelector(".friendStatus").innerHTML = this.getStatusBadge(friend);
+            friendItem.querySelector(".friendStatus").innerHTML =
+                this.getStatusBadge(friend);
 
             // Remove existing event listeners to prevent multiple bindings
             const chatBtn = friendItem.querySelector(".friendChatBtn");
@@ -291,7 +291,9 @@ class FriendList extends HTMLElement {
     async getPlayerStatus(playerName, friendsList) {
         try {
             // Find the player in the provided friends list
-            const friend = friendsList.data.find(friend => friend.playerName === playerName);
+            const friend = friendsList.data.find(
+                (friend) => friend.playerName === playerName
+            );
 
             // Check if the player is found and return their status
             if (friend) {
@@ -300,7 +302,7 @@ class FriendList extends HTMLElement {
                 throw new Error(`Player ${playerName} not found`);
             }
         } catch (error) {
-            console.error('Error fetching player status:', error);
+            console.error("Error fetching player status:", error);
             return null;
         }
     }
@@ -310,7 +312,7 @@ class FriendList extends HTMLElement {
         if (!token) {
             return false;
         }
-        const api_url = constants.BACKEND_HOST + "/account/friends/accept/";
+        const api_url = constants.BACKEND_SOCKET_HOST + "/account/friends/accept/";
         let result = false;
         await fetch(api_url, {
             method: "POST",
@@ -327,9 +329,13 @@ class FriendList extends HTMLElement {
                 result = true;
 
                 // Find and remove the accepted request from _requests
-                const friend = this._requests.find(request => request.playerName === name);
+                const friend = this._requests.find(
+                    (request) => request.playerName === name
+                );
                 if (friend) {
-                    const updatedRequests = this._requests.filter(friend => friend.playerName !== name);
+                    const updatedRequests = this._requests.filter(
+                        (friend) => friend.playerName !== name
+                    );
                     this.requests = updatedRequests;
 
                     // Fetch the updated friend list
@@ -343,12 +349,12 @@ class FriendList extends HTMLElement {
                         playerId: friend.playerId, // retain the original playerId
                         playerName: name,
                         status: playerStatus,
-                        avatar: friend.avatar || "default_avatar.png" // use the original avatar or a default one
+                        avatar: friend.avatar || "default_avatar.png", // use the original avatar or a default one
                     };
 
-                        // Add the new friend to the _friends array and update the DOM
-                        this._friends.push(newFriend);
-                        this.friends = this._friends; // This will call the set friends() method
+                    // Add the new friend to the _friends array and update the DOM
+                    this._friends.push(newFriend);
+                    this.friends = this._friends; // This will call the set friends() method
                 }
             }
         });
@@ -360,7 +366,7 @@ class FriendList extends HTMLElement {
         if (!token) {
             return false;
         }
-        const api_url = constants.BACKEND_HOST + "/account/friends/block/";
+        const api_url = constants.BACKEND_SOCKET_HOST + "/account/friends/block/";
         let result = false;
         await fetch(api_url, {
             method: "POST",
@@ -376,7 +382,9 @@ class FriendList extends HTMLElement {
             } else {
                 result = true;
                 // Update the friends list instead of reloading the page
-                const updatedFriends = this._friends.filter(friend => friend.playerName !== friendName);
+                const updatedFriends = this._friends.filter(
+                    (friend) => friend.playerName !== friendName
+                );
                 this.friends = updatedFriends; // This will call the set friends() method
             }
         });

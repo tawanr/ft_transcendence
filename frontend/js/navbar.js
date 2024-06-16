@@ -46,7 +46,7 @@ function getNotificationLink(type) {
     const linkMapping = {
         private_chat: "/",
         tour_chat: "/tournament",
-        friend_invite: "/profile",
+        friend_invite: "/",
         game_invite: "/game",
         tour_invite: "/tournament",
         game_start: "/game",
@@ -104,6 +104,8 @@ function renderNotifications(notifications) {
         const notification = notifications[i];
         if (!notification.isRead) {
             hasNotifications = true;
+            const notificationAlert = document.getElementById("notiNewAlert");
+            notificationAlert.classList.add("d-none");
         }
         const notiObject = document.createElement("li");
         notiObject.classList.add("dropdown-item");
@@ -144,10 +146,8 @@ function connectNotifications() {
     const token = localStorage.getItem("token");
     const api_url = constants.BACKEND_SOCKET_HOST + constants.BACKEND_NOTIFICATION_API;
     const notificationSocket = new WebSocket(api_url);
-    const notificationBtn = document.querySelector(
-        "#navNotifications .dropdown-toggle"
-    );
-    notificationBtn.onclick = () => {
+    const notificationBtn = document.getElementById("navNotifications");
+    notificationBtn.addEventListener("show.bs.dropdown", () => {
         notificationSocket.send(
             JSON.stringify({
                 type: "client.read",
@@ -156,7 +156,7 @@ function connectNotifications() {
         );
         const notificationAlert = document.getElementById("notiNewAlert");
         notificationAlert.classList.add("d-none");
-    };
+    });
     notificationSocket.onopen = () => {
         notificationSocket.send(
             JSON.stringify({
