@@ -1,3 +1,4 @@
+from asgiref.sync import sync_to_async
 from channels.routing import URLRouter
 from channels.testing import WebsocketCommunicator
 from django.contrib.auth.models import User
@@ -5,6 +6,7 @@ from django.test import TestCase
 from django.urls import path
 
 from account.consumers import NotificationConsumer
+from account.models import UserNotifications
 from account.services import generate_user_token
 
 
@@ -15,33 +17,54 @@ class TestNotificationWebsocket(TestCase):
         )
         self.token, _ = generate_user_token(self.user)
 
-    async def test_auth(self):
+    async def connect_ws(self):
         application = URLRouter(
             [path("ws/notification/", NotificationConsumer.as_asgi())]
         )
-        communicator = WebsocketCommunicator(application, "/ws/notification/")
-        connected, subprotocol = await communicator.connect()
-        assert connected
-        data = {
-            "type": "client.register",
-            "authorization": "abc",
-        }
-        await communicator.send_json_to(data)
-        message = await communicator.receive_json_from()
-        self.assertEqual(message["type"], "disconnect")
-
-    async def test_register(self):
-        application = URLRouter(
-            [path("ws/notification/", NotificationConsumer.as_asgi())]
-        )
-        communicator = WebsocketCommunicator(application, "/ws/notification/")
-        connected, subprotocol = await communicator.connect()
+        self.communicator = WebsocketCommunicator(application, "/ws/notification/")
+        connected, subprotocol = await self.communicator.connect()
         assert connected
         data = {
             "type": "client.register",
             "authorization": self.token,
         }
-        await communicator.send_json_to(data)
-        message = await communicator.receive_json_from()
+        await self.communicator.send_json_to(data)
+        message = await self.communicator.receive_json_from()
+        return self.communicator, message
+
+    async def test_auth(self):
+        application = URLRouter(
+            [path("ws/notification/", NotificationConsumer.as_asgi())]
+        )
+        self.communicator = WebsocketCommunicator(application, "/ws/notification/")
+        connected, subprotocol = await self.communicator.connect()
+        assert connected
+        data = {
+            "type": "client.register",
+            "authorization": "abc",
+        }
+        await self.communicator.send_json_to(data)
+        message = await self.communicator.receive_json_from()
+        self.assertEqual(message["type"], "disconnect")
+
+    async def test_register(self):
+        communicator, message = await self.connect_ws()
         self.assertEqual(message["type"], "client.registered")
         await communicator.disconnect()
+
+    async def test_get_notifications(self):
+        types = UserNotifications.NotificationTypes
+        sender = await sync_to_async(User.objects.create_user)(
+            username="testuser2", password="testpassword"
+        )
+        await UserNotifications.objects.acreate(
+            user=self.user,
+            type=types.PRIVATE_CHAT,
+            referral=sender.id,
+        )
+        communicator, _ = await self.connect_ws()
+        message = {"type": "client.notifications", "authorization": self.token}
+        await communicator.send_json_to(message)
+        response = await communicator.receive_json_from()
+        expected = {"data": [{"type": types.PRIVATE_CHAT, "is_read": False}]}
+        self.assertDictEqual(response, expected)

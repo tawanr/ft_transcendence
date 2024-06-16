@@ -4,7 +4,7 @@ import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.http import JsonResponse
 
-from account.models import UserToken
+from account.models import UserNotifications, UserToken
 
 logger = logging.getLogger()
 
@@ -54,6 +54,8 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
         self.user = token.user
+        if not data["type"] == "client.register":
+            return
         await self.send(
             text_data=json.dumps(
                 {
@@ -63,5 +65,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             )
         )
 
-    async def send_notifications(self, event):
-        pass
+    async def client_notifications(self, event):
+        notifications = UserNotifications.objects.filter(user=self.user).all()[:10]
+        rtn = []
+        for noti in notifications:
+            data = {
+                "type": noti.type,
+                "is_read": noti.is_read,
+            }
+            rtn.append(data)
+        await self.send(text_data=json.dumps({"data": rtn}))

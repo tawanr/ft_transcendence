@@ -80,3 +80,25 @@ class UserFriendInvite(models.Model):
         # print("Accept friends")
         self.from_user.details.friends.add(self.to_user)
         self.delete()
+
+
+class UserNotifications(models.Model):
+    class NotificationTypes(models.TextChoices):
+        PRIVATE_CHAT = "private_chat"
+        TOUR_CHAT = "tour_chat"
+        FRIEND_INVITE = "friend_invite"
+        GAME_INVITE = "game_invite"
+        TOUR_INVITE = "tour_invite"
+        GAME_START = "game_start"
+        TOUR_ROUND = "tour_round"
+
+    user = models.ForeignKey(
+        "auth.User", on_delete=models.CASCADE, related_name="notifications"
+    )
+    type = models.CharField(max_length=20, choices=NotificationTypes.choices)
+    referral = models.CharField(max_length=30)
+    is_read = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created"]

@@ -3,6 +3,7 @@ import json
 from channels.db import database_sync_to_async as db_s2as
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.utils.html import escape
 
@@ -49,6 +50,8 @@ class UserConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         # hasattr check if the self obj has the attribute room_group_name
+        if cache.get(f"{self.user}_chat_{self.room_type}_{self.room_id}"):
+            cache.delete(f"{self.user}_chat_{self.room_type}_{self.room_id}")
         if hasattr(self, "room_group_name"):
             au.remove_user_from_room(self.roomname, self.user)
             await self.channel_layer.group_discard(
@@ -109,6 +112,11 @@ class UserConsumer(AsyncWebsocketConsumer):
                 return
 
             await check_authorization_payload(self)
+
+            if self.user:
+                cache.set(
+                    f"{self.user}_chat_{self.room_type}_{self.room_id}", None, 60 * 15)
+                print(f"{self.user}_chat_{self.room_type}_{self.room_id}")
 
             if self.data.get("connect"):
                 return
@@ -277,34 +285,10 @@ class UserConsumer(AsyncWebsocketConsumer):
             # await send_notification(self, self.user)
             return
 
-        # Find room obj
-        # room = await get_room_obj(event["room"])
-
-        # self.chats_data = []
-        # user = await get_user_obj(self, self.user)
-        # chat_query = Chat.objects.filter(user=user, room=room).order_by("timestamp")
-        # chat_obj_all = await db_s2as(chat_query.all)()
-
-        # async for chat in chat_obj_all:
-        #     time = chat.timestamp
-        #     time = timezone.localtime(time)
-        #     # time = time.strftime("%Y-%m-%d %H.%M.%S")
-        #     time = time.strftime("%Y-%m-%d")
-
-        #     self.chats_data.append(
-        #         {
-        #             "senderName": chat.sender,
-        #             "message": chat.content,
-        #             "date": time,
-        #             "isSent": chat.sender == self.sender,
-        #         }
-        #     )
-
         await self.send(
             text_data=json.dumps(
                 {
                     "type": "message",
-                    # "chats_data": self.chats_data,
                     "message": event["message"],
                     "sender": self.sender,
                 }
