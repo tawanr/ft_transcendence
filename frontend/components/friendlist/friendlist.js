@@ -100,11 +100,12 @@ class FriendList extends HTMLElement {
                 // Create new friendItem if it doesn't exist
                 friendItem = document.createElement("li");
                 friendItem.classList.add("friendlistItem", "list-group-item");
+                const friendAvatar = friend.avatar || "/api/uploads/avatars/42_Logo.png";
                 friendItem.innerHTML = `
                     <div class="d-flex flex-row justify-content-around w-100 h-100">
                         <div class="d-flex flex-row text-start w-100">
                             <div class="d-flex flex-column px-3 justify-content-center">
-                                <img src="${friend.avatar}" class="avatar" />
+                                <img src="${friendAvatar}" class="avatar" />
                             </div>
                             <div class="d-flex flex-column justify-content-center">
                                 <span class="date fs-5">${friend.playerName}</span>
@@ -135,7 +136,7 @@ class FriendList extends HTMLElement {
             }
 
             // Update friendItem details (avatar, playerName, status)
-            friendItem.querySelector(".avatar").src = friend.avatar;
+            // friendItem.querySelector(".avatar").src = friend.avatar;
             friendItem.querySelector(".date").innerText = friend.playerName;
             friendItem.querySelector(".friendStatus").innerText = "Pending";
 
@@ -178,11 +179,12 @@ class FriendList extends HTMLElement {
                 // Create new friendItem if it doesn't exist
                 friendItem = document.createElement("li");
                 friendItem.classList.add("friendlistItem", "list-group-item");
+                const friendAvatar = friend.avatar || "/api/uploads/avatars/42_Logo.png";
                 friendItem.innerHTML = `
                     <div class="d-flex flex-row justify-content-around w-100 h-100">
                         <div class="d-flex flex-row text-start w-100">
                             <div class="d-flex flex-column px-3 justify-content-center">
-                                <img src="${friend.avatar}" class="avatar" />
+                                <img src="${friendAvatar}" class="avatar" />
                             </div>
                             <div class="d-flex flex-column justify-content-center">
                                 <span class="date fs-5">${friend.playerName}</span>
@@ -219,7 +221,7 @@ class FriendList extends HTMLElement {
             }
 
             // Update friendItem details (avatar, playerName, status)
-            friendItem.querySelector(".avatar").src = friend.avatar;
+            // friendItem.querySelector(".avatar").src = friend.avatar;
             friendItem.querySelector(".date").innerText = friend.playerName;
             friendItem.querySelector(".friendStatus").innerHTML =
                 this.getStatusBadge(friend);
@@ -386,7 +388,7 @@ class FriendList extends HTMLElement {
                         playerId: friend.playerId, // retain the original playerId
                         playerName: name,
                         status: playerStatus,
-                        avatar: friend.avatar || "default_avatar.png", // use the original avatar or a default one
+                        avatar: friend.avatar || "/api/uploads/avatars/42_Logo.png", // use the original avatar or a default one
                     };
 
                     // Add the new friend to the _friends array and update the DOM
