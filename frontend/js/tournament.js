@@ -33,9 +33,7 @@ async function getTournamentDetails() {
         return;
     }
     const tournamentId = document.getElementById("tournamentId").value;
-    if (!tournamentId) {
-        return;
-    }
+
     const api_url = constants.BACKEND_HOST + constants.BACKEND_TOURNAMENT_API;
     await fetch(api_url, {
         method: "GET",

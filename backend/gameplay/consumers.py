@@ -167,8 +167,11 @@ class GameplayConsumer(AsyncWebsocketConsumer):
         if not self.host or self.game.started:
             return
         player = await self.game.get_player(event["id"])
+        print(f"{event = }")
         await player.set_ready()
         await self.update_group()
+        if len(self.game.players) < 2:
+            return
         for player in self.game.players:
             if not player.ready:
                 return
