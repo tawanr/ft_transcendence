@@ -13,17 +13,17 @@ export class PongGame {
      * @constructor
      * @param {HTMLElement} document - The shadow DOM of the game element.
      */
-    constructor(document) {
+    constructor(document, localGame) {
         // Set up DOM. This is due to the fact that the game is rendered in a shadow DOM
         // so we can't access the DOM directly from the game.
         this.document = document;
+        this.localGame = localGame || false;
 
         // Init all default states.
         this.player1 = new Player();
         this.player2 = new Player("player2");
         this.ball = new PongBall();
         this.playerId = "";
-        this.localGame = false;
         this.renderMode = "2d";
 
         this.canvas = this.document.getElementById("gameArea");
@@ -86,7 +86,10 @@ export class PongGame {
         if (localStorage.getItem("token")) {
             nameInput.classList.add("d-none");
         }
-        if (this.renderMode === "3d") {
+        if (this.localGame) {
+            this.document.getElementById("userRoomNav").classList.add("d-none");
+        }
+        if (this.renderMode === "3d" && !this.localGame) {
             this.ctx = this.canvas.getContext("3d");
             this.init3d();
         } else {
@@ -105,6 +108,9 @@ export class PongGame {
         // Add event listeners' callbacks are wrapped in arrow functions to preserve
         // the `this` context. Otherwise, `this` will refer to the event target.
         // Alternatively, we can use `bind` to bind the `this` context to the callback.
+        if (this.localGame) {
+            return;
+        }
         this.document.getElementById("joinRoomBtn").addEventListener("click", () => {
             const roomCode = this.document.getElementById("roomCode").value;
             this.connectRoom(roomCode);
@@ -119,22 +125,22 @@ export class PongGame {
      */
     localUpdate() {
         if (this.player1Up && this.player1.y > 0) {
-            this.player1.y -= 2;
+            this.player1.y -= 5;
         } else if (
             this.player1Down &&
             this.player1.y < this.canvas.height - this.player1.height
         ) {
-            this.player1.y += 2;
+            this.player1.y += 5;
         }
         if (this.player2Up && this.player2.y > 0) {
-            this.player2.y -= 2;
+            this.player2.y -= 5;
         } else if (
             this.player2Down &&
             this.player2.y < this.canvas.height - this.player2.height
         ) {
-            this.player2.y += 2;
+            this.player2.y += 5;
         }
-        this.ball.update();
+        this.ball.update(this.player1, this.player2, this.updateScoreBoard.bind(this));
     }
 
     /**
@@ -142,9 +148,9 @@ export class PongGame {
      */
     draw() {
         // For local game, need to update draw calls to support without socket game states
-        // if (this.localGame) {
-        //     this.localUpdate();
-        // }
+        if (this.localGame) {
+            this.localUpdate();
+        }
         requestAnimationFrame(() => {
             this.draw();
         });
@@ -309,6 +315,10 @@ export class PongGame {
      */
     playerSendReady() {
         this.playerReady = true;
+        if (this.localGame) {
+            this.ball.speed = 5;
+            return;
+        }
         this.gameSocket.send(
             JSON.stringify({
                 type: constants.SOCKET_READY,
@@ -321,6 +331,9 @@ export class PongGame {
      * Send the player's controls to the server.
      */
     socketSendControls() {
+        if (this.localGame) {
+            return;
+        }
         this.gameSocket.send(
             JSON.stringify({
                 type: constants.SOCKET_PLAYER_CONTROLS,
@@ -442,5 +455,18 @@ export class PongGame {
         player2Name.innerText = this.player2.name;
         player1Score.innerText = this.player1.score;
         player2Score.innerText = this.player2.score;
+
+        if (!this.localGame) {
+            return;
+        }
+        const playerState = this.document.getElementById("playerStatus");
+        playerState.classList.add("text-success");
+        if (this.player1.score >= 5) {
+            playerState.innerText = "Player 1 won!";
+            this.ball.gameEnd = true;
+        } else if (this.player2.score >= 5) {
+            playerState.innerText = "Player 2 won!";
+            this.ball.gameEnd = true;
+        }
     }
 }

@@ -55,6 +55,7 @@ export class PongBall extends GameEntity {
     constructor() {
         super();
         this.resetDefaults();
+        this.gameEnd = false;
     }
 
     resetDefaults() {
@@ -67,7 +68,10 @@ export class PongBall extends GameEntity {
         this.direction = Math.random() * 60 + 120 + Math.round(Math.random()) * 180;
     }
 
-    update() {
+    update(player1, player2, scoreCallback) {
+        if (this.gameEnd) {
+            return;
+        }
         let x = this.speed * Math.cos(this.direction * (Math.PI / 180));
         let y = this.speed * Math.sin(this.direction * (Math.PI / 180));
         this.x += x;
@@ -75,6 +79,7 @@ export class PongBall extends GameEntity {
         this.direction = this.direction % 360;
         if (this.x < 0) {
             player2.incrementScore();
+            scoreCallback();
             this.resetPos();
         }
         if (player1.checkCollision(this) || player2.checkCollision(this)) {
@@ -89,6 +94,7 @@ export class PongBall extends GameEntity {
         }
         if (this.x + this.width > constants.GAME_WIDTH) {
             player1.incrementScore();
+            scoreCallback();
             this.resetPos();
         }
         if (this.y + this.height > constants.GAME_HEIGHT) {

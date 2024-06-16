@@ -23,7 +23,8 @@ class PongElement extends HTMLElement {
     }
 
     setupGame() {
-        this.game = new PongGame(this.shadow);
+        this.localGame = this.hasAttribute("localGame");
+        this.game = new PongGame(this.shadow, this.localGame);
         this.game.renderMode = "3d";
         this.game.setup();
 

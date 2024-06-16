@@ -42,6 +42,14 @@ const urlRoutes = {
         navLink: "nav-btn-game",
         cacheBust: true,
     },
+    "/local": {
+        template: TEMPLATE_DIR + "local.html",
+        title: "Local Game | " + TITLE,
+        description: "",
+        script: JS_DIR + "local.js",
+        navLink: "nav-btn-local",
+        cacheBust: true,
+    },
     "/tournament": {
         template: TEMPLATE_DIR + "tournament.html",
         title: "Tournament | " + TITLE,
