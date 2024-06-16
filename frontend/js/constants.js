@@ -1,6 +1,5 @@
 // SERVER CONFIGS
-// export const BACKEND_SERVER_IP = location.hostname;
-export const BACKEND_SERVER_IP = "localhost:9999";
+export const BACKEND_SERVER_IP = location.hostname;
 
 export const BACKEND_HOST = `https://${BACKEND_SERVER_IP}/api`;
 export const BACKEND_SOCKET_HOST = `wss://${BACKEND_SERVER_IP}/wsapi`;
