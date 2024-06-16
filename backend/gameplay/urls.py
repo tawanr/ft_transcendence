@@ -19,4 +19,9 @@ urlpatterns = [
         views.join_tournament,
         name="join_tournament",
     ),
+    path(
+        "game/",
+        views.invite_game_player,
+        name="game_invite",
+    )
 ]
