@@ -9,6 +9,8 @@ from account.models import UserDetails, UserFriendInvite, UserNotifications
 from chat.models import Chat
 from channels.layers import get_channel_layer
 
+from gameplay.models import Tournament
+
 
 @receiver(post_save, sender=User)
 def create_user_details(sender, instance, created, **kwargs):
@@ -21,19 +23,22 @@ def chat_notification(sender, instance, created, **kwargs):
         return
     room = instance.room
     players = room.name.split("_")
-    sender_id = instance.user.id
-    receiver_id = 0
-    for player in players:
-        if sender_id != int(player):
-            receiver_id = int(player)
-    if not receiver_id:
+    if players[0] == "tournament":
         return
-    receiver = User.objects.get(id=receiver_id)
-    UserNotifications.objects.create(
-        user=receiver,
-        type="private_chat",
-        referral=sender_id,
-    )
+    else:
+        sender_id = instance.user.id
+        receiver_id = 0
+        for player in players:
+            if sender_id != int(player):
+                receiver_id = int(player)
+        if not receiver_id:
+            return
+        receiver = User.objects.get(id=receiver_id)
+        UserNotifications.objects.create(
+            user=receiver,
+            type="private_chat",
+            referral=sender_id,
+        )
 
 @receiver(post_save, sender=UserFriendInvite)
 def invite_notification(sender, instance, created, **kwargs):
