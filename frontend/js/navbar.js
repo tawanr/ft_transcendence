@@ -47,9 +47,9 @@ function getNotificationLink(type) {
         private_chat: "/",
         tour_chat: "/tournament",
         friend_invite: "/",
-        game_invite: "/game",
+        game_invite: "/",
         tour_invite: "/tournament",
-        game_start: "/game",
+        game_start: "/",
         tour_round: "/tournament",
     };
     return linkMapping[type];
