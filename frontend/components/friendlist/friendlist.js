@@ -6,6 +6,7 @@ class FriendList extends HTMLElement {
     constructor() {
         super();
         this.friendAddBtn = false;
+        this.gameInviteBtn = this.hasAttribute("gameInviteBtn");
         this.shadow = this.attachShadow({ mode: "closed" });
         fetchHTML("/components/friendlist/friendlist.html").then((html) => {
             this.html = html;
@@ -193,6 +194,9 @@ class FriendList extends HTMLElement {
                         <div class="d-flex flex-column justify-content-center">
                             <div class="d-flex flex-row">
                                 <div class="text-center friendIcon align-middle">
+                                    <a href="javascript:void(0)" class="friendInviteBtn"><img src="static/invite.svg" /></a>
+                                </div>
+                                <div class="text-center friendIcon align-middle">
                                     <a href="javascript:void(0)" class="friendChatBtn"><img src="static/chat-fill.svg" /></a>
                                 </div>
                                 <div class="text-center friendIcon align-middle">
@@ -237,6 +241,11 @@ class FriendList extends HTMLElement {
             newDelBtn.addEventListener("click", async () => {
                 await this.deleteFriend(friend.playerName);
             });
+
+            const inviteBtn = friendItem.querySelector(".friendInviteBtn");
+            inviteBtn.addEventListener("click", async () => {
+                await this.inviteGame(friend.playerName);
+            });
         }
 
         // Hide friendDelBtn if it's not initialized
@@ -245,6 +254,34 @@ class FriendList extends HTMLElement {
                 element.classList.add("d-none");
             });
         }
+        if (!this.gameInviteBtn) {
+            this.shadow.querySelectorAll("#friendInviteBtn").forEach((element) => {
+                element.classList.add("d-none");
+            });
+        }
+    }
+
+    async inviteGame(name) {
+        const token = getUserToken();
+        if (!token) {
+            return false;
+        }
+        const api_url = constants.BACKEND_HOST + "/gameplay/game/";
+        await fetch(api_url, {
+            method: "POST",
+            headers: {
+                Authorization: "Bearer " + token,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ username: name }),
+        }).then(async (response) => {
+            if (response.status != 200) {
+                throw new Error("Cannot start game")
+            }
+            window.location.replace("/");
+        }).catch((error) => {
+            alert("Cannot start game with the selected player.")
+        });
     }
 
     connectChat(id, name) {
